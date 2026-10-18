@@ -1,19 +1,15 @@
-from pathlib import Path
-
 import pytest
 
+from conftest import GAMES
 from soccer_tactics.analytics.features import add_kinematics
-from soccer_tactics.loaders import load_metrica
 from soccer_tactics.schema import COLUMNS, PITCH_LENGTH, PITCH_WIDTH
 
-ROOT = Path(__file__).resolve().parents[1] / "data" / "raw" / "metrica"
-GAMES = [g for g in (1, 2) if (ROOT / "data" / f"Sample_Game_{g}").exists()]
 pytestmark = pytest.mark.skipif(not GAMES, reason="Metrica sample data not downloaded")
 
 
-@pytest.fixture(scope="module", params=GAMES)
-def tracking(request):
-    return load_metrica(ROOT, request.param)
+@pytest.fixture(params=GAMES)
+def tracking(request, games):
+    return games[request.param][0]
 
 
 def test_schema(tracking):
