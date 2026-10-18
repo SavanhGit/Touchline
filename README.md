@@ -1,4 +1,4 @@
-# soccer-tactics
+# Soccer Match Analysis Tool
 
 Tracking-data analytics engine for soccer: movement prediction, zone and player risk, defensive weakness detection, with an LLM agent on top.
 
