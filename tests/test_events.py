@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from conftest import GAMES
@@ -39,6 +40,18 @@ def test_shots_start_in_the_half_the_shooter_attacks(events):
     home, away = shots[shots["team"] == "home"], shots[shots["team"] == "away"]
     assert (home["x0"] > 0).mean() >= 0.95
     assert (away["x0"] < 0).mean() >= 0.95
+
+
+def test_events_line_up_with_tracking_frames(games):
+    """The passer's tracked position at the event frame matches the event's start point
+    (measured: median 0.34 m, p90 0.51 m, and worse in both directions when frames are shifted)."""
+    for tracking, events in games.values():
+        passes = events[events["event"] == "pass"]
+        tp = tracking[tracking["team"] != "ball"][["frame", "team", "player_id", "x", "y"]]
+        m = passes.merge(tp, on=["frame", "team", "player_id"], how="left", suffixes=("", "_t"))
+        d = np.hypot(m["x0"] - m["x"], m["y0"] - m["y"])
+        assert m["x"].notna().mean() > 0.99
+        assert d.median() < 1.0 and d.quantile(0.9) < 2.0
 
 
 def test_no_ids_with_spaces(events):
