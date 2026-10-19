@@ -112,6 +112,56 @@ def player_impact(passes: pd.DataFrame, tracking: pd.DataFrame, min_minutes: flo
     return out.reset_index()
 
 
+def action_values(events: pd.DataFrame, grid: np.ndarray) -> pd.DataFrame:
+    """Value defensive actions by the opponent threat at the action location.
+
+    This is deliberately separate from pass impact: it credits recoveries,
+    tackles, and interceptions without pretending the sparse Metrica sample
+    supports a calibrated defensive model.
+    """
+    actions = events[events["event"].isin(["tackle", "interception", "recovery"])].copy()
+    if actions.empty:
+        actions["defensive_value"] = pd.Series(dtype=float)
+        return actions
+    a = attacking(actions)
+    actions["defensive_value"] = xt_at(grid, -a["x0"], -a["y0"])
+    return actions
+
+
+def player_impact_with_actions(
+    passes: pd.DataFrame,
+    events: pd.DataFrame,
+    tracking: pd.DataFrame,
+    grid: np.ndarray,
+    min_minutes: float = 15.0,
+) -> pd.DataFrame:
+    """Extend :func:`player_impact` with shot and defensive-action totals.
+
+    Existing pass-only columns remain unchanged. New columns are raw event
+    totals and per-90 rates, intended for multi-match aggregation.
+    """
+    out = player_impact(passes, tracking, min_minutes=min_minutes).set_index(KEYS)
+    events = events[events["event"].isin(["shot", "tackle", "interception", "recovery"])]
+    if events.empty:
+        out["shots"], out["goals"], out["defensive_actions"] = 0, 0, 0
+        out["defensive_value"], out["defensive_value_p90"] = 0.0, 0.0
+        return out.reset_index()
+    actions = action_values(events, grid)
+    shots = events[events["event"] == "shot"].groupby(KEYS).agg(
+        shots=("event", "size"), goals=("success", "sum")
+    )
+    defense = actions.groupby(KEYS).agg(
+        defensive_actions=("event", "size"), defensive_value=("defensive_value", "sum")
+    )
+    out = out.join(shots, how="left").join(defense, how="left")
+    out[["shots", "goals", "defensive_actions"]] = out[
+        ["shots", "goals", "defensive_actions"]
+    ].fillna(0).astype(int)
+    out["defensive_value"] = out["defensive_value"].fillna(0.0)
+    out["defensive_value_p90"] = out["defensive_value"] / out["minutes"] * 90
+    return out.reset_index()
+
+
 def turnover_zones(passes: pd.DataFrame, nx: int = NX, ny: int = NY, buildup_only: bool = True) -> np.ndarray:
     """Total turnover cost by where the ball was lost, shape (nx, ny), in the losing team's
     attacking frame (its own goal is at -x). Filter `passes` to one team first for its hot spots."""

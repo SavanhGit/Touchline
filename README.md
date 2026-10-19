@@ -71,6 +71,31 @@ xT-weighted turnover costs. They do not turn the two-game validation sample
 into a predictive benchmark: single-match detriment is noisy, and the threat
 map is a spatial explanation rather than a shot-probability model.
 
+## Extending the engine
+
+New tracking sources can be converted once to the canonical schema and loaded
+without changing downstream analytics:
+
+```python
+from soccer_tactics.loaders import load_canonical
+
+tracking, events = load_canonical("tracking.parquet", "events.parquet")
+```
+
+The current extension points are intentionally conservative:
+
+- `player_impact_with_actions` preserves pass metrics and adds shot totals plus
+  xT-weighted defensive action value for `tackle`, `interception`, and
+  `recovery` events. These values are explanatory until they are calibrated on
+  more matches.
+- `constant_velocity_forecast` is a transparent trajectory baseline. It
+  establishes the prediction schema and evaluation seam before a learned model
+  is introduced.
+- `cv.detections_to_tracking` and `TrackingAdapter` define the video contract:
+  a detector must emit pitch-mapped metre coordinates and stable team/player
+  labels. Model-specific inference and camera calibration remain a later
+  integration.
+
 ## Validation
 
 Reproduce with `python scripts/<name>.py data/raw/metrica`. Two games is a small sample; treat these as sanity checks, not benchmarks.
@@ -101,3 +126,9 @@ Read these with their limits in mind:
 4. Player impact: build-up detriment and on-field impact scores (done, passes only)
 5. Agent layer: natural-language queries backed by the analytics
 6. CV pipeline: roboflow/sports -> same tracking schema
+
+The remaining phases now have working seams and baselines: canonical file
+loading, action-aware impact, constant-velocity forecasting, and a CV adapter.
+Dataset-specific loaders, learned forecasting, and video model calibration
+still require external data and should be validated against ground truth before
+being presented as production capabilities.
