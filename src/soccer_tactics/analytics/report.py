@@ -1,5 +1,6 @@
 """Deterministic match explanations with source-addressable evidence."""
 from dataclasses import dataclass
+from collections.abc import Iterable
 
 import numpy as np
 import pandas as pd
@@ -81,7 +82,7 @@ def _evidence(rows: pd.DataFrame, metric: str | None = None) -> list[Evidence]:
     return [Evidence(**{k: row[k] for k in Evidence.__dataclass_fields__}) for row in selected.to_dict("records")]
 
 
-def analyze_match(match_bundle: MatchBundle, team: str, training_matches) -> MatchReport:
+def analyze_match(match_bundle: MatchBundle, team: str, training_matches: Iterable[MatchBundle]) -> MatchReport:
     if team not in {"home", "away"}:
         raise ValueError("team must be home or away")
     bundle = match_bundle
