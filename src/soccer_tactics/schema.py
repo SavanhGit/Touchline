@@ -27,14 +27,19 @@ def validate(df: pd.DataFrame) -> pd.DataFrame:
 def attack_flips(df: pd.DataFrame) -> dict:
     """Per period: True if the home team attacks toward -x there, so the period needs flipping."""
     players = df[df["team"] != "ball"]
-    mean_x = players.groupby(["period", "team"])["x"].mean().unstack()
+    keys = ["match_id", "period", "team"] if df.match_id.nunique() > 1 else ["period", "team"]
+    mean_x = players.groupby(keys)["x"].mean().unstack()
     return (mean_x["home"] > mean_x["away"]).to_dict()
 
 
 def flip_periods(df: pd.DataFrame, flips: dict, cols: list[str]) -> pd.DataFrame:
     """Rotate the pitch 180 degrees (negate x and y) in the flagged periods."""
     df = df.copy()
-    df.loc[df["period"].map(flips).fillna(False).astype(bool), cols] *= -1
+    if flips and isinstance(next(iter(flips)), tuple):
+        mask = pd.Series(list(zip(df.match_id, df.period)), index=df.index).map(flips)
+    else:
+        mask = df["period"].map(flips)
+    df.loc[mask.fillna(False).astype(bool), cols] *= -1
     return df
 
 

@@ -21,12 +21,13 @@ def load_canonical(
     read = lambda path: pd.read_parquet(path) if Path(path).suffix == ".parquet" else pd.read_csv(path)
     tracking = validate(read(tracking_path))
     if orient_tracking:
-        tracking = orient(tracking)
+        from soccer_tactics.schema import attack_flips, flip_periods
+
+        flips = attack_flips(tracking)
+        tracking = flip_periods(tracking, flips, ["x", "y"])
     events = None
     if events_path is not None:
         events = validate_events(read(events_path))
         if orient_tracking:
-            from soccer_tactics.schema import attack_flips, flip_periods
-
-            events = flip_periods(events, attack_flips(tracking), ["x0", "y0", "x1", "y1"])
+            events = flip_periods(events, flips, ["x0", "y0", "x1", "y1"])
     return tracking, events

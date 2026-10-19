@@ -4,7 +4,7 @@ import pandas as pd
 
 from soccer_tactics.schema import FPS
 
-KEYS = ["period", "team", "player_id"]
+KEYS = ["match_id", "period", "team", "player_id"]
 
 
 def add_kinematics(
@@ -26,7 +26,8 @@ def add_kinematics(
             lambda s: s.rolling(window, center=True, min_periods=1).mean()
         )
     g = df.groupby(KEYS)
-    dt = g["frame"].diff() / fps  # handles dropped frames
+    dt = g["time_s"].diff()  # source clock handles different sampling rates and dropped frames
+    dt = dt.where(dt > 0)
     df["vx"] = g["x_s"].diff() / dt
     df["vy"] = g["y_s"].diff() / dt
     df["speed"] = np.hypot(df["vx"], df["vy"])
