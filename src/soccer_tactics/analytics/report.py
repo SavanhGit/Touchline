@@ -6,7 +6,7 @@ import pandas as pd
 
 from soccer_tactics.analytics.impact import pass_values, player_impact
 from soccer_tactics.analytics.xt import attacking, fit_xt
-from soccer_tactics.match import MatchBundle
+from soccer_tactics.match import MatchBundle, validate_bundle
 
 CHANNELS = ("right", "centre", "left")  # y increases toward the attacking team's left
 LIMITATIONS = [
@@ -81,27 +81,16 @@ def _evidence(rows: pd.DataFrame, metric: str | None = None) -> list[Evidence]:
     return [Evidence(**{k: row[k] for k in Evidence.__dataclass_fields__}) for row in selected.to_dict("records")]
 
 
-def _check_bundle(bundle: MatchBundle) -> None:
-    if set(bundle.tracking.match_id.astype(str)) != {str(bundle.match_id)}:
-        raise ValueError("bundle must contain tracking from exactly its declared match")
-    if not bundle.events.empty and set(bundle.events.match_id.astype(str)) != {str(bundle.match_id)}:
-        raise ValueError("bundle events contain a different match")
-    if not np.isfinite(bundle.fps) or bundle.fps <= 0:
-        raise ValueError("bundle fps must be positive")
-    if bundle.quality.get("duplicate_objects", 0) or bundle.quality.get("conflicting_clocks", 0):
-        raise ValueError("repair duplicate objects or conflicting clocks before analysis")
-
-
 def analyze_match(match_bundle: MatchBundle, team: str, training_matches) -> MatchReport:
     if team not in {"home", "away"}:
         raise ValueError("team must be home or away")
     bundle = match_bundle
-    _check_bundle(bundle)
+    validate_bundle(bundle)
     training = list(training_matches)
     if not training:
         raise ValueError("at least one other training match is required")
     for other in training:
-        _check_bundle(other)
+        validate_bundle(other)
         if str(other.match_id) == str(bundle.match_id):
             raise ValueError("held-out match cannot be used for xT training")
     grid = fit_xt(pd.concat([other.events for other in training], ignore_index=True))

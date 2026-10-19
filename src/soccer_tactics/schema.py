@@ -4,6 +4,7 @@ One row per object per frame (long format). Coordinates are meters, origin at pi
 center, x along the length, y along the width. After `orient`, the home team attacks
 toward +x in every period.
 """
+import numpy as np
 import pandas as pd
 
 PITCH_LENGTH = 105.0
@@ -14,6 +15,25 @@ COLUMNS = ["match_id", "period", "frame", "time_s", "team", "player_id", "x", "y
 TEAMS = ("home", "away", "ball")
 
 
+def _require_finite(df: pd.DataFrame, columns: list[str], label: str) -> None:
+    if df.empty:
+        return
+    try:
+        finite = np.isfinite(df[columns].to_numpy()).all()
+    except TypeError:
+        finite = False
+    if not finite:
+        raise ValueError(f"{label} must be finite numeric values: {columns}")
+
+
+def _validate_identity(df: pd.DataFrame) -> None:
+    if df[["match_id", "team", "player_id"]].isna().any().any():
+        raise ValueError("match_id, team and player_id cannot be missing")
+    _require_finite(df, ["period", "frame", "time_s"], "source clocks")
+    if (df[["period", "frame"]] % 1 != 0).any().any():
+        raise ValueError("period and frame must be integers")
+
+
 def validate(df: pd.DataFrame) -> pd.DataFrame:
     missing = [c for c in COLUMNS if c not in df.columns]
     if missing:
@@ -21,6 +41,8 @@ def validate(df: pd.DataFrame) -> pd.DataFrame:
     bad = set(df["team"].unique()) - set(TEAMS)
     if bad:
         raise ValueError(f"unknown team labels: {bad}")
+    _validate_identity(df)
+    _require_finite(df, ["x", "y"], "tracking positions")
     return df[COLUMNS]
 
 
@@ -64,6 +86,10 @@ def validate_events(df: pd.DataFrame) -> pd.DataFrame:
     bad = set(df["event"].unique()) - set(EVENTS)
     if bad:
         raise ValueError(f"unknown event labels: {bad}")
-    if df.loc[df["event"] == "pass", ["x0", "y0", "x1", "y1"]].isna().any().any():
-        raise ValueError("passes need start and end coordinates")
+    bad = set(df["team"].unique()) - {"home", "away"}
+    if bad:
+        raise ValueError(f"unknown event team labels: {bad}")
+    _validate_identity(df)
+    _require_finite(df, ["x0", "y0"], "event origins")
+    _require_finite(df.loc[df["event"] == "pass"], ["x1", "y1"], "pass endpoints")
     return df[EVENT_COLUMNS]

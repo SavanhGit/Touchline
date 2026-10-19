@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 from soccer_tactics.loaders.metrica import load_metrica_game
-from soccer_tactics.match import MatchBundle, infer_fps, inspect_quality
+from soccer_tactics.match import MatchBundle, infer_fps, inspect_quality, validate_bundle
 
 
 def load_metrica_bundle(root: str | Path, game: int = 1) -> MatchBundle:
@@ -19,7 +19,9 @@ def load_metrica_bundle(root: str | Path, game: int = 1) -> MatchBundle:
     penalty = (raw.Type.shift() == "SET PIECE") & (raw.Subtype.shift() == "PENALTY")
     goals["penalty"] = penalty.loc[scored].to_numpy()
     goals = goals.sort_values(["period", "frame"]).reset_index(drop=True)
-    return MatchBundle(
+    bundle = MatchBundle(
         f"metrica_{game}", tracking, events, goals, "Metrica Sports sample data",
         infer_fps(tracking), score_known=True, quality=inspect_quality(tracking, events),
     )
+    validate_bundle(bundle)
+    return bundle

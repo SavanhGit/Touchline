@@ -8,21 +8,9 @@ from soccer_tactics.analytics.features import add_kinematics
 from soccer_tactics.analytics.impact import add_pressure, pass_values, player_impact
 from soccer_tactics.analytics.report import analyze_match, channel
 from soccer_tactics.loaders import load_canonical, load_metrica_bundle
-from soccer_tactics.match import MatchBundle, infer_fps, inspect_quality
-from soccer_tactics.schema import COLUMNS, EVENT_COLUMNS
+from soccer_tactics.match import infer_fps, inspect_quality
+from factories import make_bundle as bundle
 from conftest import GAMES
-
-
-def bundle(mid="test"):
-    tracking = pd.DataFrame(
-        [(mid, 1, f, float(f), side, pid, x, 0.) for f in range(900)
-         for side, pid, x in [("home", "h", -20.), ("home", "g", -45.), ("away", "a", 20.)]],
-        columns=COLUMNS,
-    )
-    rows = [(mid, 1, "home", "pass", i >= 6, "h", "r", i, float(i), -20., -20., 30. if i >= 8 else -5., -20.) for i in range(10)]
-    rows += [(mid, 1, "away", "shot", i == 0, "a", None, 20+i, float(20+i), -40., -20. if i < 3 else 0., -52., 0.) for i in range(5)]
-    events = pd.DataFrame(rows, columns=EVENT_COLUMNS)
-    return MatchBundle(mid, tracking, events, pd.DataFrame(columns=["team", "period", "frame", "time_s", "player_id", "penalty"]), "synthetic", 1.)
 
 
 def test_report_hand_computed_counts_channels_and_evidence():
