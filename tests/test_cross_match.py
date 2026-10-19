@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from soccer_tactics.analytics.cross_match import leave_one_match_out, summarize_cross_match
+from soccer_tactics.loaders import load_placeholder_matches
 from soccer_tactics.schema import COLUMNS, EVENT_COLUMNS, FPS
 
 
@@ -36,3 +37,23 @@ def test_leave_one_match_out_scores_only_held_out_passes():
 def test_cross_match_requires_two_matches():
     with pytest.raises(ValueError, match="at least two"):
         leave_one_match_out([_match("m1", 10)])
+
+
+def test_placeholder_matches_run_through_cross_match_evaluation():
+    passes, players = leave_one_match_out(load_placeholder_matches(), min_minutes=15)
+    summary = summarize_cross_match(passes, players)
+
+    assert set(summary) == {
+        "matches",
+        "passes",
+        "completed_pass_rate",
+        "mean_xt_added",
+        "mean_turnover_cost",
+        "players",
+    }
+    assert summary["matches"] == 2.0
+    assert summary["passes"] == 2.0
+    assert summary["completed_pass_rate"] == 1.0
+    assert summary["mean_turnover_cost"] == 0.0
+    assert summary["players"] == 4.0
+    assert np.isfinite(summary["mean_xt_added"])

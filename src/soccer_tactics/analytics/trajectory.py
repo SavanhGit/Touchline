@@ -22,11 +22,15 @@ def constant_velocity_forecast(
     frame = frame[frame["team"] != "ball"].copy()
     if players is not None:
         frame = frame[frame["player_id"].isin(players)]
+    frame = frame.sort_values(["match_id", "period", "team", "player_id", "frame"])
+    groups = frame.groupby(["match_id", "period", "team", "player_id"])
+    frame["raw_vx"] = groups["x"].diff() / groups["time_s"].diff()
+    frame["raw_vy"] = groups["y"].diff() / groups["time_s"].diff()
     latest = frame.sort_values("frame").groupby(
         ["match_id", "period", "team", "player_id"], as_index=False
     ).tail(1)
-    latest["x_pred"] = latest["x"] + latest["vx"].fillna(0.0) * horizon_s
-    latest["y_pred"] = latest["y"] + latest["vy"].fillna(0.0) * horizon_s
+    latest["x_pred"] = latest["x"] + latest["raw_vx"].fillna(latest["vx"]).fillna(0.0) * horizon_s
+    latest["y_pred"] = latest["y"] + latest["raw_vy"].fillna(latest["vy"]).fillna(0.0) * horizon_s
     latest["horizon_s"] = horizon_s
     return latest[
         ["match_id", "period", "frame", "team", "player_id", "horizon_s", "x_pred", "y_pred"]

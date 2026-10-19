@@ -158,3 +158,18 @@ passes, players = leave_one_match_out(matches)
 
 Each held-out match is scored with an xT grid fitted only on the other matches,
 so reported pass value does not train on the match it evaluates.
+
+Before the archive is available, run the same evaluation flow against two
+deterministic placeholder matches:
+
+```bash
+python scripts/validate_cross_match.py
+```
+
+When a valid IDSSE download is available, pass its directory and at least two
+match ids to the same script. The evaluation code and output schema stay the
+same:
+
+```bash
+python scripts/validate_cross_match.py data/raw/idsse DFL-MAT-... DFL-MAT-...
+```
