@@ -79,7 +79,7 @@ def top_speeds(n: int = 5) -> list[dict]:
     n = _limit(n)
     df = add_kinematics(_require("tracking")["tracking"])
     df = df[df["team"] != "ball"]
-    out = df.groupby(["team", "player_id"])["speed"].quantile(0.999).nlargest(n).rename("peak_speed")
+    out = df.groupby(["match_id", "team", "player_id"])["speed"].quantile(0.999).nlargest(n).rename("peak_speed")
     return out.reset_index().to_dict("records")
 
 

@@ -88,8 +88,15 @@ def player_impact(passes: pd.DataFrame, tracking: pd.DataFrame, min_minutes: flo
     avg_x and is_gk come from `avg_position`."""
     from soccer_tactics.match import infer_fps
 
+    if fps is not None:
+        try:
+            valid_fps = bool(np.isfinite(fps) and fps > 0)
+        except (TypeError, ValueError):
+            valid_fps = False
+        if not valid_fps:
+            raise ValueError("fps must be positive and finite")
     counts_by_player = tracking[tracking["team"] != "ball"].groupby(KEYS).size()
-    rates = {mid: fps or infer_fps(part) for mid, part in tracking.groupby("match_id")}
+    rates = {mid: fps if fps is not None else infer_fps(part) for mid, part in tracking.groupby("match_id")}
     minutes = counts_by_player.div(counts_by_player.index.get_level_values("match_id").map(rates).to_numpy() * 60).rename("minutes")
     p = passes.assign(
         buildup_turnover=passes["buildup"] & ~passes["success"],
