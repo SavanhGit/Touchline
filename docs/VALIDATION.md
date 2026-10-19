@@ -55,6 +55,14 @@ Synthetic tests cover counts, channel boundaries, away rotation, empty events, i
 
 The core suite can run without dashboard dependencies. Dashboard tests skip if Streamlit/Plotly or real matches are unavailable; release validation requires both real matches and does not substitute placeholder data.
 
+## Controller browser QA (2026-10-19)
+
+After the subagent browser transport limitation described below, the main session inspected the local app directly. Overview, Risk & progression, Players, and Evidence opened for both teams in both real matches (16 view checks), with the expected view headings and no visible exceptions. Match switching showed the selected match's evidence IDs and the correct home/away result context.
+
+Desktop layouts were inspected at 1100 and 1440 pixels wide. Summary values and controls were readable, pitch proportions were retained, and no overlapping controls were observed. The evidence slider reached both -3 and +3 seconds and the pitch-control toggle rendered the displayed frame with its limitations. Four game-1-away screenshots are retained under `docs/demo/`. This checks presentation and navigation, not the causal validity of tactical hypotheses.
+
+The existing `.streamlit/config.toml` was inspected and retained: it already supplies the dark theme, loopback-only server and disabled usage telemetry. No new configuration setting was needed.
+
 ## Dashboard resilience checkpoint (Task 5, 2026-10-19)
 
 The focused dashboard run, `.\.venv\Scripts\python.exe -m pytest tests/test_dashboard.py -q`, passed **7 tests in 38.98s**, including the existing real-data navigation smoke test. After adding absent-root and zero-byte-file cases and an explicit NaN-rate fixture, the synthetic-only run, `.\.venv\Scripts\python.exe -m pytest tests/test_dashboard.py -q -k 'not navigation'`, passed **8 tests, 1 deselected in 9.18s**. Product code did not change between these runs. No full package suite was repeated.
