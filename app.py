@@ -1,5 +1,7 @@
 """Launch with: python -m streamlit run app.py."""
 from pathlib import Path
+from math import isfinite
+from numbers import Real
 
 import pandas as pd
 import plotly.express as px
@@ -28,6 +30,17 @@ def load_report(game, team, revision):
     return analyze_match(selected, team, [training])
 
 
+def display_value(value, *, rate=False):
+    """Format missing measurements without implying zero or converting NaN to int."""
+    if pd.isna(value) or (isinstance(value, Real) and not isfinite(value)):
+        return "Unavailable"
+    if isinstance(value, Real):
+        if rate:
+            return f"{value:.1%}"
+        return str(int(value)) if value % 1 == 0 else f"{value:.3f}"
+    return str(value)
+
+
 def main():
     st.markdown("""<style>
     .block-container {padding-top:3.5rem; max-width:1450px}
@@ -42,20 +55,24 @@ def main():
         st.caption("SOCCER TACTICAL ANALYST")
         st.divider()
         st.markdown("### Match room")
-        available = [g for g in (1, 2) if (DATA / "data" / f"Sample_Game_{g}").exists()]
-        if len(available) != 2:
-            st.warning("Both Metrica matches are required for held-out xT training.")
+        source_files = [DATA / "data" / f"Sample_Game_{g}" / f"Sample_Game_{g}_Raw{suffix}.csv"
+                        for g in (1, 2)
+                        for suffix in ("EventsData", "TrackingData_Home_Team", "TrackingData_Away_Team")]
+        missing = [f for f in source_files if not f.is_file() or f.stat().st_size == 0]
+        if missing:
+            st.warning("Source data is missing or empty. Both matches need events, home tracking and away tracking before analysis can start. Download or restore the Metrica sample data at the path below.")
+            st.code(str(DATA))
+            st.write("Missing or empty files:", ", ".join(f.name for f in missing))
             st.code("git clone --depth 1 https://github.com/metrica-sports/sample-data data/raw/metrica")
             st.stop()
-        game = st.selectbox("Match", available, format_func=lambda g: f"Metrica · Sample game {g}", key="selected_match")
+        game = st.selectbox("Match", [1, 2], format_func=lambda g: f"Metrica · Sample game {g}", key="selected_match")
         team = st.selectbox("Analyze team", ["away", "home"], format_func=lambda t: f"{t.capitalize()} (anonymous)", key="selected_team")
         st.divider()
         st.caption("POST-MATCH ANALYSIS")
         st.write("Explore the evidence. Question the explanation.")
         st.caption("Data: Metrica Sports. Teams and players are anonymized. This is a portfolio research tool.")
-    source_files = sorted(DATA.glob("data/Sample_Game_[12]/*.csv"))
-    engine_files = sorted((ROOT / "src" / "soccer_tactics").rglob("*.py"))
-    revision = tuple((str(f.relative_to(ROOT)), f.stat().st_mtime_ns, f.stat().st_size) for f in source_files + engine_files)
+    engine_files = [Path(__file__)] + sorted((ROOT / "src" / "soccer_tactics").rglob("*.py"))
+    revision = tuple((str(f.resolve()), f.stat().st_mtime_ns, f.stat().st_size) for f in source_files + engine_files)
     try:
         bundle = load_bundle(game, revision)
         report = load_report(game, team, revision)
@@ -101,7 +118,7 @@ def main():
             st.subheader("Both teams, same measurements")
             comparison = report.comparisons.set_index("team").T
             comparison.index = comparison.index.str.replace("_", " ").str.capitalize()
-            comparison = comparison.map(lambda v: f"{v:.3f}" if isinstance(v, float) and v % 1 else str(int(v)) if isinstance(v, (int, float)) else str(v))
+            comparison = comparison.apply(lambda row: row.map(lambda v: display_value(v, rate=row.name.endswith("rate"))), axis=1)
             st.dataframe(comparison, width="stretch")
     with risk:
         st.subheader("Where possession became vulnerable")
@@ -117,7 +134,11 @@ def main():
         st.caption("Each team's channels use its own attacking direction: left is positive y after rotation. Turnover channels use pass origins.")
         fig = px.bar(report.channels, x="channel", y="entries", color="team", barmode="group", color_discrete_map={"home": "#51dfad", "away": "#ffad70"})
         st.plotly_chart(fig, width="stretch")
-        st.dataframe(report.channels, hide_index=True, width="stretch")
+        channels = report.channels.copy()
+        for name in ("entry_rate", "buildup_loss_rate"):
+            channels[name] = channels[name].map(lambda v: display_value(v, rate=True))
+        st.dataframe(channels, hide_index=True, width="stretch")
+        st.caption("Unavailable rates have no relevant passes in their denominator; they do not mean 0%.")
     with players_tab:
         st.subheader("Who contributed through passing?")
         st.warning("Single-match rankings are noisy. These metrics credit passes only; goalkeeper roles are inferred from position.")
@@ -126,9 +147,17 @@ def main():
         table = report.players.sort_values(metric, ascending=False)
         st.caption("Outfield players · at least 15 tracked minutes. Nearest-opponent distance is context, not a pressure-adjusted score.")
         config = {name: st.column_config.NumberColumn(name.replace("_", " ").capitalize(), format="%.3f") for name in columns if name not in {"player_id", "passes"}}
-        st.dataframe(table.loc[~table.is_gk, columns], hide_index=True, width="stretch", column_config=config)
+        outfield = table.loc[~table.is_gk, columns]
+        if outfield.empty:
+            st.info("No eligible outfield players have at least 15 tracked minutes for this team.")
+        else:
+            st.dataframe(outfield, hide_index=True, width="stretch", column_config=config)
         with st.expander("Goalkeepers · shown separately"):
-            st.dataframe(table.loc[table.is_gk, columns], hide_index=True, width="stretch", column_config=config)
+            goalkeepers = table.loc[table.is_gk, columns]
+            if goalkeepers.empty:
+                st.info("No eligible goalkeeper has at least 15 tracked minutes for this team.")
+            else:
+                st.dataframe(goalkeepers, hide_index=True, width="stretch", column_config=config)
     with evidence_tab:
         st.subheader("Inspect the supporting moments")
         if not report.findings:
@@ -152,7 +181,7 @@ def main():
             st.plotly_chart(evidence_pitch(frame, moment, control=control, trail=window), width="stretch")
             st.caption("Tracking reconstruction, not match video. The gold arrow stays fixed to the source event; player positions follow the slider. Trails show the preceding two seconds. Home always attacks right.")
             if control:
-                st.caption("Green indicates home control; orange indicates away control. Simplified time-to-intercept, not pass-success probability.")
+                st.caption("Green indicates home control; orange indicates away control. Simplified time-to-intercept omits ball flight and acceleration; it is not pass-success probability.")
     with st.expander("Methods, provenance & data quality"):
         for limitation in report.limitations:
             st.write(f"• {limitation}")
