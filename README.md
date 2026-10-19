@@ -51,6 +51,26 @@ outfield.nlargest(5, "impact_p90")                  # most value created per 90
 outfield.nlargest(5, "buildup_turnovers_p90")       # most build-up turnovers per 90
 ```
 
+### Agent tools
+
+The tool registry is provider-neutral: `specs()` produces Anthropic-shaped tool
+definitions and `call()` dispatches validated analytics operations. Load the
+tracking frame, events, fitted xT grid, and optional player table once:
+
+```python
+from soccer_tactics.agent.tools import call, set_state
+
+set_state(tracking=tracking, events=events, xt_grid=fit_xt(other_events), impact=table)
+call("rank_players", metric="buildup_turnovers_p90", n=5)
+call("turnover_zones", team="home", n=5)
+call("threat_map", match_id=1, time_s=42.0, n=10)
+```
+
+The agent tools expose pass-only impact, time-to-intercept pitch control, and
+xT-weighted turnover costs. They do not turn the two-game validation sample
+into a predictive benchmark: single-match detriment is noisy, and the threat
+map is a spatial explanation rather than a shot-probability model.
+
 ## Validation
 
 Reproduce with `python scripts/<name>.py data/raw/metrica`. Two games is a small sample; treat these as sanity checks, not benchmarks.
