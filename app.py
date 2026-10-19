@@ -14,7 +14,7 @@ from soccer_tactics.loaders import load_metrica_bundle
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data" / "raw" / "metrica"
 
-st.set_page_config(page_title="Touchline | Soccer Tactical Analyst", page_icon="⚽", layout="wide")
+st.set_page_config(page_title="Touchline | Soccer Match Analysis", page_icon="⚽", layout="wide")
 
 
 @st.cache_resource(max_entries=2)
@@ -52,7 +52,7 @@ def main():
     </style>""", unsafe_allow_html=True)
     with st.sidebar:
         st.markdown("## ⚽ TOUCHLINE")
-        st.caption("SOCCER TACTICAL ANALYST")
+        st.caption("SOCCER MATCH ANALYSIS")
         st.divider()
         st.markdown("### Match room")
         source_files = [DATA / "data" / f"Sample_Game_{g}" / f"Sample_Game_{g}_Raw{suffix}.csv"

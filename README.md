@@ -1,6 +1,6 @@
-# soccer-tactics
+# Touchline
 
-Tracking-data analytics engine for soccer: movement prediction, zone and player risk, defensive weakness detection, with an LLM agent on top.
+Touchline is a soccer match analysis project that explores match patterns through tracking data, evidence-backed findings, and tactical hypotheses.
 
 ## Layout
 

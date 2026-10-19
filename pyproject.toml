@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "soccer-tactics"
 version = "0.1.0"
-description = "Tracking-data analytics engine for soccer, with an LLM agent layer"
+description = "Touchline: evidence-backed soccer match analysis from tracking data"
 requires-python = ">=3.10"
 dependencies = [
     "numpy>=1.26",

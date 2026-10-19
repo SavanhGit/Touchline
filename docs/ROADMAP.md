@@ -1,4 +1,4 @@
-# Soccer Tactical Analyst roadmap
+# Touchline roadmap
 
 The first release is **Touchline**, a local post-match dashboard. Its question is: “What patterns contributed to the result, and what adjustments might have helped?”
 
