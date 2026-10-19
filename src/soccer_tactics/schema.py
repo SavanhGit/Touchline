@@ -49,7 +49,7 @@ EVENT_COLUMNS = [
     "match_id", "period", "team", "event", "success", "player_id", "receiver_id",
     "frame", "time_s", "x0", "y0", "x1", "y1",
 ]
-EVENTS = ("pass", "shot")
+EVENTS = ("pass", "shot", "tackle", "interception", "recovery")
 
 
 def validate_events(df: pd.DataFrame) -> pd.DataFrame:
