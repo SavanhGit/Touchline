@@ -132,3 +132,29 @@ loading, action-aware impact, constant-velocity forecasting, and a CV adapter.
 Dataset-specific loaders, learned forecasting, and video model calibration
 still require external data and should be validated against ground truth before
 being presented as production capabilities.
+
+### IDSSE cross-match evaluation
+
+IDSSE is the verified second source: seven full Bundesliga matches with paired
+DFL XML event and TRACAB position files, published under CC BY 4.0. See
+`docs/research/idsse-dataset.md` for attribution, source links, and download
+details. The optional parser is installed with:
+
+```bash
+pip install -e ".[idsse]"
+```
+
+After downloading the XML archive into `data/raw/idsse`, list matches and run
+leave-one-match-out evaluation:
+
+```python
+from soccer_tactics.loaders import list_idsse_matches, load_idsse_game
+from soccer_tactics.analytics.cross_match import leave_one_match_out
+
+ids = list_idsse_matches("data/raw/idsse")
+matches = [load_idsse_game("data/raw/idsse", match_id) for match_id in ids]
+passes, players = leave_one_match_out(matches)
+```
+
+Each held-out match is scored with an xT grid fitted only on the other matches,
+so reported pass value does not train on the match it evaluates.
