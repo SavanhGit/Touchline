@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 from soccer_tactics.analytics.features import add_kinematics
 from soccer_tactics.analytics.pitch_control import pitch_control
 from soccer_tactics.analytics.xt import centers
+from soccer_tactics.match import infer_fps
 
 COLORS = {"home": "#51dfad", "away": "#ffad70", "ball": "#ffffff"}
 
@@ -55,8 +56,11 @@ def pass_map(rows: pd.DataFrame, team: str, title: str, losses: bool = False) ->
 
 def tracking_window(bundle, evidence, radius_s: float = 3.4) -> pd.DataFrame:
     t = bundle.tracking
-    mask = (t.period == evidence.period) & ((t.time_s - evidence.time_s).abs() <= radius_s)
-    return add_kinematics(t.loc[mask], fps=bundle.fps) if mask.any() else t.iloc[:0].copy()
+    mask = ((t.match_id == evidence.match_id) & (t.period == evidence.period)
+            & t.time_s.between(evidence.time_s - radius_s, evidence.time_s + radius_s))
+    window = add_kinematics(t.loc[mask], fps=bundle.fps) if mask.any() else t.iloc[:0].copy()
+    window.attrs["fps"] = bundle.fps
+    return window
 
 
 def snapshot(window: pd.DataFrame, target_s: float, fps: float) -> pd.DataFrame:
@@ -71,6 +75,7 @@ def snapshot(window: pd.DataFrame, target_s: float, fps: float) -> pd.DataFrame:
 
 def evidence_pitch(frame: pd.DataFrame, evidence, *, control: bool = False, trail: pd.DataFrame | None = None) -> go.Figure:
     fig = pitch("Tracking reconstruction · home → / away ←")
+    frame = frame[np.isfinite(frame[["x", "y"]]).all(axis=1)]
     if control and not frame.empty and {"home", "away"} <= set(frame.team):
         grid = pitch_control(frame)
         X, Y = centers(*grid.shape)
@@ -78,10 +83,20 @@ def evidence_pitch(frame: pd.DataFrame, evidence, *, control: bool = False, trai
                                 colorscale=[[0, "#b36e41"], [.5, "#16382f"], [1, "#349a79"]],
                                 opacity=.55, showscale=False, hoverinfo="skip", name="Home pitch control"))
     if trail is not None and not frame.empty:
+        trail = trail[(trail.match_id == frame.match_id.iloc[0]) & (trail.period == frame.period.iloc[0])]
+        fps = trail.attrs["fps"] if "fps" in trail.attrs else infer_fps(trail)
+        tolerance = max(1.5 / fps, .06)
         trail = trail[(trail.time_s <= frame.time_s.iloc[0]) & (trail.time_s >= frame.time_s.iloc[0] - 2)]
         for (side, _), group in trail.groupby(["team", "player_id"]):
-            group = group.sort_values("frame").iloc[::5]
-            fig.add_trace(go.Scatter(x=group.x, y=group.y, mode="lines", line=dict(color=COLORS[side], width=1), opacity=.3, showlegend=False, hoverinfo="skip"))
+            group = group.sort_values("frame")
+            valid = np.isfinite(group[["x", "y"]]).all(axis=1)
+            # Detect source gaps before display downsampling (five frames apart
+            # is normal for a displayed line, but not for source observations).
+            breaks = (group.time_s.diff() > tolerance) | ~valid | ~valid.shift(fill_value=False)
+            for _, segment in group.groupby(breaks.cumsum()):
+                segment = segment[np.isfinite(segment[["x", "y"]]).all(axis=1)].iloc[::5]
+                if not segment.empty:
+                    fig.add_trace(go.Scatter(x=segment.x, y=segment.y, mode="lines", line=dict(color=COLORS[side], width=1), opacity=.3, showlegend=False, hoverinfo="skip"))
     for side in ("home", "away", "ball"):
         players = frame[frame.team == side]
         fig.add_trace(go.Scatter(
