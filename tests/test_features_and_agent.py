@@ -1,4 +1,6 @@
+import numpy as np
 import pandas as pd
+import pytest
 
 from soccer_tactics.agent import tools
 from soccer_tactics.analytics.features import add_kinematics
@@ -39,3 +41,23 @@ def test_top_speeds_tool_runs_on_loaded_tracking():
     top = tools.call("top_speeds", n=1)
     assert top[0]["player_id"] == "h1"
     assert abs(top[0]["peak_speed"] - 6.0) < 0.05
+
+
+def test_rank_players_uses_loaded_impact_table():
+    impact = pd.DataFrame(
+        [
+            {"match_id": 1, "team": "home", "player_id": "h1", "is_gk": False, "impact_p90": 0.2,
+             "detriment_p90": 0.1, "buildup_turnovers_p90": 1.0},
+            {"match_id": 1, "team": "home", "player_id": "h2", "is_gk": True, "impact_p90": 0.9,
+             "detriment_p90": 0.3, "buildup_turnovers_p90": 2.0},
+        ]
+    )
+    tools.set_state(tracking=_runner(), events=pd.DataFrame(), xt_grid=np.zeros((16, 12)), impact=impact)
+    top = tools.call("rank_players", metric="impact_p90", n=1)
+    assert top[0]["player_id"] == "h1"
+
+
+def test_tool_call_reports_missing_state():
+    tools.STATE["impact"] = None
+    with pytest.raises(RuntimeError, match="impact"):
+        tools.call("rank_players")
