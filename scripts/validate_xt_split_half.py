@@ -8,7 +8,7 @@ from soccer_tactics.loaders import load_metrica_game
 
 root = sys.argv[1]
 e1, e2 = (load_metrica_game(root, g)[1] for g in (1, 2))
-raw1, raw2 = fit_xt(e1), fit_xt(e2)
+raw1, raw2 = fit_xt(e1, smooth=0), fit_xt(e2, smooth=0)
 
 
 def rank_corr(a, b):
@@ -31,7 +31,7 @@ perm = [rank_corr(raw1, rng.permutation(raw2.ravel()).reshape(raw2.shape)) for _
 print("\nshuffled-cells baseline spearman: mean %.3f, 95th pct %.3f" % (np.mean(perm), np.percentile(perm, 95)))
 
 both = pd.concat([e1, e2], ignore_index=True)
-full = fit_xt(both)
+full = fit_xt(both, smooth=0)
 np.set_printoptions(linewidth=200, suppress=True)
 print("\nfull-data final-third rows (x cells 12-15), raw x1000:")
 print((full[12:] * 1000).round(0).astype(int))

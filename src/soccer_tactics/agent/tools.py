@@ -79,7 +79,7 @@ def top_speeds(n: int = 5) -> list[dict]:
     n = _limit(n)
     df = add_kinematics(_require("tracking")["tracking"])
     df = df[df["team"] != "ball"]
-    out = df.groupby(["team", "player_id"])["speed"].quantile(0.999).nlargest(n).rename("peak_speed")
+    out = df.groupby(["match_id", "team", "player_id"])["speed"].quantile(0.999).nlargest(n).rename("peak_speed")
     return out.reset_index().to_dict("records")
 
 
@@ -159,10 +159,10 @@ def threat_map(match_id: int, time_s: float, n: int = 10) -> list[dict]:
     match = tracking[tracking["match_id"] == match_id]
     if match.empty:
         raise ValueError(f"match not found: {match_id}")
-    frame_id = (match[["frame", "time_s"]].drop_duplicates()
+    moment = (match[["period", "frame", "time_s"]].drop_duplicates()
                 .assign(_distance=lambda x: (x["time_s"] - time_s).abs())
-                .sort_values(["_distance", "frame"]).iloc[0]["frame"])
-    frame = match[match["frame"] == frame_id]
+                .sort_values(["_distance", "period", "frame"]).iloc[0])
+    frame = match[(match["frame"] == moment["frame"]) & (match["period"] == moment["period"])]
     control = pitch_control(frame)
     home, away = zone_threat(control, _require("xt_grid")["xt_grid"])
     rows = []

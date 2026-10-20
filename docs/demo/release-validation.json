@@ -1,0 +1,926 @@
+[
+  {
+    "match_id": "metrica_1",
+    "team": "home",
+    "score": {
+      "home": 3,
+      "away": 0
+    },
+    "outcome": "win",
+    "training_match_ids": [
+      "metrica_2"
+    ],
+    "quality": {
+      "tracking_rows": 3278383,
+      "events": 1045,
+      "periods": [
+        1,
+        2
+      ],
+      "fps": 25.0,
+      "duplicate_objects": 0,
+      "missing_positions": 0,
+      "nonfinite_positions": 0,
+      "out_of_bounds": 32859,
+      "frame_gaps": 0,
+      "conflicting_clocks": 0,
+      "event_tracking_coverage": 1.0,
+      "alignment_median_m": 0.3310199999999985,
+      "alignment_p90_m": 0.506410812552628,
+      "shots_in_attacking_half": 1.0
+    },
+    "comparisons": [
+      {
+        "team": "home",
+        "passes": 548,
+        "completed": 437,
+        "completion_rate": 0.7974452554744526,
+        "buildup_passes": 308,
+        "buildup_losses": 61,
+        "buildup_loss_rate": 0.19805194805194806,
+        "buildup_cost": 1.0448616666205044,
+        "final_third_entries": 28,
+        "pass_value_added": 2.718596083258051,
+        "modeling_shots": 18
+      },
+      {
+        "team": "away",
+        "passes": 473,
+        "completed": 362,
+        "completion_rate": 0.7653276955602537,
+        "buildup_passes": 238,
+        "buildup_losses": 61,
+        "buildup_loss_rate": 0.25630252100840334,
+        "buildup_cost": 1.4704307028016501,
+        "final_third_entries": 31,
+        "pass_value_added": 1.408472685680941,
+        "modeling_shots": 6
+      }
+    ],
+    "findings": [
+      {
+        "category": "buildup",
+        "title": "Buildup losses on the centre",
+        "observation": "23 of 115 buildup passes in this channel were lost (20%); total modeled cost 0.415 xT. Median nearest-opponent distance was 6.8 m.",
+        "suggestion": "Investigate offering a closer passing option on the centre, or varying the buildup route.",
+        "tradeoff": "Bringing support toward the ball can leave less space occupied further forward.",
+        "metrics": {
+          "numerator": 23,
+          "denominator": 115,
+          "rate": 0.2,
+          "cost": 0.4152025148256314
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_1:2:115137:814",
+            "match_id": "metrica_1",
+            "period": 2,
+            "frame": 115137,
+            "time_s": 4605.48,
+            "team": "home",
+            "player_id": "Player2",
+            "event": "pass",
+            "x0": -43.050000000000004,
+            "y0": 0.6800000000000006,
+            "x1": -37.8,
+            "y1": -17.68
+          },
+          {
+            "event_id": "metrica_1:1:5520:43",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 5520,
+            "time_s": 220.8,
+            "team": "home",
+            "player_id": "Player4",
+            "event": "pass",
+            "x0": -21.0,
+            "y0": 4.760000000000001,
+            "x1": -23.099999999999998,
+            "y1": -1.3600000000000012
+          },
+          {
+            "event_id": "metrica_1:2:114676:808",
+            "match_id": "metrica_1",
+            "period": 2,
+            "frame": 114676,
+            "time_s": 4587.04,
+            "team": "home",
+            "player_id": "Player3",
+            "event": "pass",
+            "x0": -46.199999999999996,
+            "y0": 4.080000000000004,
+            "x1": -25.2,
+            "y1": -1.3600000000000012
+          }
+        ]
+      },
+      {
+        "category": "progression",
+        "title": "Limited direct entries from the centre",
+        "observation": "3 of 143 passes starting outside the final third crossed into it successfully (2%). Other passes may be useful circulation; this does not establish poor decisions.",
+        "suggestion": "Review the supporting moments for a forward passing option, and compare routes through the other channels.",
+        "tradeoff": "More direct progression can increase turnover exposure; low entry rate alone does not justify forcing a pass.",
+        "metrics": {
+          "numerator": 140,
+          "denominator": 143,
+          "entries": 3,
+          "entry_rate": 0.02097902097902098
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_1:1:25476:208",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 25476,
+            "time_s": 1019.04,
+            "team": "home",
+            "player_id": "Player7",
+            "event": "pass",
+            "x0": -8.400000000000002,
+            "y0": 8.84,
+            "x1": -11.549999999999999,
+            "y1": -9.520000000000001
+          },
+          {
+            "event_id": "metrica_1:2:93775:671",
+            "match_id": "metrica_1",
+            "period": 2,
+            "frame": 93775,
+            "time_s": 3751.0,
+            "team": "home",
+            "player_id": "Player10",
+            "event": "pass",
+            "x0": 16.799999999999997,
+            "y0": -3.3999999999999995,
+            "x1": 45.15,
+            "y1": -2.719999999999999
+          },
+          {
+            "event_id": "metrica_1:2:127891:925",
+            "match_id": "metrica_1",
+            "period": 2,
+            "frame": 127891,
+            "time_s": 5115.64,
+            "team": "home",
+            "player_id": "Player3",
+            "event": "pass",
+            "x0": -36.75,
+            "y0": 3.400000000000003,
+            "x1": -32.550000000000004,
+            "y1": 6.799999999999999
+          }
+        ]
+      },
+      {
+        "category": "danger",
+        "title": "Opponent danger through their centre",
+        "observation": "4 of 6 opponent shots came through their attacking centre channel (67%). Channels are measured in the opponent's attacking direction.",
+        "suggestion": "Investigate earlier pressure or additional cover in the opponent's centre attacking channel.",
+        "tradeoff": "Extra cover in one channel can free space elsewhere; these counts do not identify the responsible defender.",
+        "metrics": {
+          "numerator": 4,
+          "denominator": 6,
+          "event_type": "shots"
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_1:1:19470:145",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 19470,
+            "time_s": 778.8,
+            "team": "away",
+            "player_id": "Player24",
+            "event": "shot",
+            "x0": -38.85,
+            "y0": 8.84,
+            "x1": -50.4,
+            "y1": 1.3600000000000012
+          },
+          {
+            "event_id": "metrica_1:2:75262:539",
+            "match_id": "metrica_1",
+            "period": 2,
+            "frame": 75262,
+            "time_s": 3010.48,
+            "team": "away",
+            "player_id": "Player19",
+            "event": "shot",
+            "x0": -27.3,
+            "y0": 4.759999999999996,
+            "x1": -51.449999999999996,
+            "y1": -1.3600000000000012
+          },
+          {
+            "event_id": "metrica_1:2:124755:907",
+            "match_id": "metrica_1",
+            "period": 2,
+            "frame": 124755,
+            "time_s": 4990.2,
+            "team": "away",
+            "player_id": "Player23",
+            "event": "shot",
+            "x0": -36.75,
+            "y0": -6.120000000000002,
+            "x1": -55.650000000000006,
+            "y1": -5.440000000000001
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "match_id": "metrica_1",
+    "team": "away",
+    "score": {
+      "home": 3,
+      "away": 0
+    },
+    "outcome": "loss",
+    "training_match_ids": [
+      "metrica_2"
+    ],
+    "quality": {
+      "tracking_rows": 3278383,
+      "events": 1045,
+      "periods": [
+        1,
+        2
+      ],
+      "fps": 25.0,
+      "duplicate_objects": 0,
+      "missing_positions": 0,
+      "nonfinite_positions": 0,
+      "out_of_bounds": 32859,
+      "frame_gaps": 0,
+      "conflicting_clocks": 0,
+      "event_tracking_coverage": 1.0,
+      "alignment_median_m": 0.3310199999999985,
+      "alignment_p90_m": 0.506410812552628,
+      "shots_in_attacking_half": 1.0
+    },
+    "comparisons": [
+      {
+        "team": "home",
+        "passes": 548,
+        "completed": 437,
+        "completion_rate": 0.7974452554744526,
+        "buildup_passes": 308,
+        "buildup_losses": 61,
+        "buildup_loss_rate": 0.19805194805194806,
+        "buildup_cost": 1.0448616666205044,
+        "final_third_entries": 28,
+        "pass_value_added": 2.718596083258051,
+        "modeling_shots": 18
+      },
+      {
+        "team": "away",
+        "passes": 473,
+        "completed": 362,
+        "completion_rate": 0.7653276955602537,
+        "buildup_passes": 238,
+        "buildup_losses": 61,
+        "buildup_loss_rate": 0.25630252100840334,
+        "buildup_cost": 1.4704307028016501,
+        "final_third_entries": 31,
+        "pass_value_added": 1.408472685680941,
+        "modeling_shots": 6
+      }
+    ],
+    "findings": [
+      {
+        "category": "buildup",
+        "title": "Buildup losses on the left",
+        "observation": "22 of 76 buildup passes in this channel were lost (29%); total modeled cost 0.288 xT. Median nearest-opponent distance was 3.2 m.",
+        "suggestion": "Investigate offering a closer passing option on the left, or varying the buildup route.",
+        "tradeoff": "Bringing support toward the ball can leave less space occupied further forward.",
+        "metrics": {
+          "numerator": 22,
+          "denominator": 76,
+          "rate": 0.2894736842105263,
+          "cost": 0.2883562757603374
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_1:1:57624:402",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 57624,
+            "time_s": 2304.96,
+            "team": "away",
+            "player_id": "Player16",
+            "event": "pass",
+            "x0": 47.24999999999999,
+            "y0": -12.919999999999996,
+            "x1": 32.550000000000004,
+            "y1": -16.32
+          },
+          {
+            "event_id": "metrica_1:1:31738:258",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 31738,
+            "time_s": 1269.52,
+            "team": "away",
+            "player_id": "Player20",
+            "event": "pass",
+            "x0": 14.700000000000001,
+            "y0": -11.560000000000002,
+            "x1": 16.800000000000004,
+            "y1": -12.919999999999996
+          },
+          {
+            "event_id": "metrica_1:1:69030:494",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 69030,
+            "time_s": 2761.2,
+            "team": "away",
+            "player_id": "Player20",
+            "event": "pass",
+            "x0": 9.449999999999998,
+            "y0": -14.959999999999997,
+            "x1": 2.100000000000002,
+            "y1": -17.0
+          }
+        ]
+      },
+      {
+        "category": "progression",
+        "title": "Limited direct entries from the centre",
+        "observation": "9 of 137 passes starting outside the final third crossed into it successfully (7%). Other passes may be useful circulation; this does not establish poor decisions.",
+        "suggestion": "Review the supporting moments for a forward passing option, and compare routes through the other channels.",
+        "tradeoff": "More direct progression can increase turnover exposure; low entry rate alone does not justify forcing a pass.",
+        "metrics": {
+          "numerator": 128,
+          "denominator": 137,
+          "entries": 9,
+          "entry_rate": 0.06569343065693431
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_1:1:21580:168",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 21580,
+            "time_s": 863.2,
+            "team": "away",
+            "player_id": "Player16",
+            "event": "pass",
+            "x0": 3.150000000000003,
+            "y0": 2.040000000000002,
+            "x1": -2.100000000000002,
+            "y1": -19.040000000000003
+          },
+          {
+            "event_id": "metrica_1:1:67514:475",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 67514,
+            "time_s": 2700.56,
+            "team": "away",
+            "player_id": "Player25",
+            "event": "pass",
+            "x0": 51.449999999999996,
+            "y0": -2.7200000000000024,
+            "x1": 43.050000000000004,
+            "y1": 0.0
+          },
+          {
+            "event_id": "metrica_1:2:113498:799",
+            "match_id": "metrica_1",
+            "period": 2,
+            "frame": 113498,
+            "time_s": 4539.92,
+            "team": "away",
+            "player_id": "Player21",
+            "event": "pass",
+            "x0": -1.050000000000001,
+            "y0": -6.120000000000002,
+            "x1": 14.700000000000001,
+            "y1": 4.759999999999996
+          }
+        ]
+      },
+      {
+        "category": "danger",
+        "title": "Opponent danger through their centre",
+        "observation": "13 of 18 opponent shots came through their attacking centre channel (72%). Channels are measured in the opponent's attacking direction.",
+        "suggestion": "Investigate earlier pressure or additional cover in the opponent's centre attacking channel.",
+        "tradeoff": "Extra cover in one channel can free space elsewhere; these counts do not identify the responsible defender.",
+        "metrics": {
+          "numerator": 13,
+          "denominator": 18,
+          "event_type": "shots"
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_1:1:2289:23",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 2289,
+            "time_s": 91.56,
+            "team": "home",
+            "player_id": "Player9",
+            "event": "shot",
+            "x0": 44.1,
+            "y0": 2.040000000000002,
+            "x1": 53.550000000000004,
+            "y1": -3.400000000000003
+          },
+          {
+            "event_id": "metrica_1:2:99032:707",
+            "match_id": "metrica_1",
+            "period": 2,
+            "frame": 99032,
+            "time_s": 3961.28,
+            "team": "home",
+            "player_id": "Player9",
+            "event": "shot",
+            "x0": 50.4,
+            "y0": 2.7200000000000024,
+            "x1": 53.550000000000004,
+            "y1": 0.6800000000000006
+          },
+          {
+            "event_id": "metrica_1:1:9628:77",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 9628,
+            "time_s": 385.12,
+            "team": "home",
+            "player_id": "Player8",
+            "event": "shot",
+            "x0": 48.3,
+            "y0": 8.84,
+            "x1": 50.4,
+            "y1": 2.719999999999999
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "match_id": "metrica_2",
+    "team": "home",
+    "score": {
+      "home": 3,
+      "away": 2
+    },
+    "outcome": "win",
+    "training_match_ids": [
+      "metrica_1"
+    ],
+    "quality": {
+      "tracking_rows": 3188704,
+      "events": 1164,
+      "periods": [
+        1,
+        2
+      ],
+      "fps": 25.0,
+      "duplicate_objects": 0,
+      "missing_positions": 0,
+      "nonfinite_positions": 0,
+      "out_of_bounds": 21888,
+      "frame_gaps": 0,
+      "conflicting_clocks": 0,
+      "event_tracking_coverage": 1.0,
+      "alignment_median_m": 0.34270440995709767,
+      "alignment_p90_m": 0.5104680735842732,
+      "shots_in_attacking_half": 1.0
+    },
+    "comparisons": [
+      {
+        "team": "home",
+        "passes": 639,
+        "completed": 543,
+        "completion_rate": 0.8497652582159625,
+        "buildup_passes": 294,
+        "buildup_losses": 49,
+        "buildup_loss_rate": 0.16666666666666666,
+        "buildup_cost": 0.9162976330997747,
+        "final_third_entries": 41,
+        "pass_value_added": 1.942757429859024,
+        "modeling_shots": 13
+      },
+      {
+        "team": "away",
+        "passes": 502,
+        "completed": 421,
+        "completion_rate": 0.8386454183266933,
+        "buildup_passes": 246,
+        "buildup_losses": 39,
+        "buildup_loss_rate": 0.15853658536585366,
+        "buildup_cost": 0.8081965529372781,
+        "final_third_entries": 30,
+        "pass_value_added": 1.5160049759491687,
+        "modeling_shots": 10
+      }
+    ],
+    "findings": [
+      {
+        "category": "buildup",
+        "title": "Buildup losses on the centre",
+        "observation": "23 of 101 buildup passes in this channel were lost (23%); total modeled cost 0.518 xT. Median nearest-opponent distance was 3.4 m.",
+        "suggestion": "Investigate offering a closer passing option on the centre, or varying the buildup route.",
+        "tradeoff": "Bringing support toward the ball can leave less space occupied further forward.",
+        "metrics": {
+          "numerator": 23,
+          "denominator": 101,
+          "rate": 0.22772277227722773,
+          "cost": 0.5182067854562661
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_2:2:111719:1001",
+            "match_id": "metrica_2",
+            "period": 2,
+            "frame": 111719,
+            "time_s": 4468.76,
+            "team": "home",
+            "player_id": "Player2",
+            "event": "pass",
+            "x0": -47.25,
+            "y0": -9.520000000000001,
+            "x1": -43.050000000000004,
+            "y1": 4.760000000000001
+          },
+          {
+            "event_id": "metrica_2:1:17109:174",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 17109,
+            "time_s": 684.36,
+            "team": "home",
+            "player_id": "Player7",
+            "event": "pass",
+            "x0": -34.65,
+            "y0": -7.479999999999999,
+            "x1": -30.450000000000003,
+            "y1": -10.200000000000001
+          },
+          {
+            "event_id": "metrica_2:1:64740:618",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 64740,
+            "time_s": 2589.6,
+            "team": "home",
+            "player_id": "Player4",
+            "event": "pass",
+            "x0": -43.050000000000004,
+            "y0": 5.439999999999998,
+            "x1": -30.450000000000003,
+            "y1": 5.439999999999998
+          }
+        ]
+      },
+      {
+        "category": "progression",
+        "title": "Limited direct entries from the centre",
+        "observation": "10 of 155 passes starting outside the final third crossed into it successfully (6%). Other passes may be useful circulation; this does not establish poor decisions.",
+        "suggestion": "Review the supporting moments for a forward passing option, and compare routes through the other channels.",
+        "tradeoff": "More direct progression can increase turnover exposure; low entry rate alone does not justify forcing a pass.",
+        "metrics": {
+          "numerator": 145,
+          "denominator": 155,
+          "entries": 10,
+          "entry_rate": 0.06451612903225806
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_2:1:25450:275",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 25450,
+            "time_s": 1018.0,
+            "team": "home",
+            "player_id": "Player6",
+            "event": "pass",
+            "x0": -12.6,
+            "y0": 6.119999999999997,
+            "x1": -12.6,
+            "y1": -19.720000000000002
+          },
+          {
+            "event_id": "metrica_2:1:60944:576",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 60944,
+            "time_s": 2437.76,
+            "team": "home",
+            "player_id": "Player2",
+            "event": "pass",
+            "x0": -11.549999999999999,
+            "y0": -8.16,
+            "x1": 11.549999999999999,
+            "y1": -8.16
+          },
+          {
+            "event_id": "metrica_2:2:96783:901",
+            "match_id": "metrica_2",
+            "period": 2,
+            "frame": 96783,
+            "time_s": 3871.32,
+            "team": "home",
+            "player_id": "Player5",
+            "event": "pass",
+            "x0": 16.800000000000004,
+            "y0": -10.880000000000003,
+            "x1": 13.65,
+            "y1": -25.84
+          }
+        ]
+      },
+      {
+        "category": "danger",
+        "title": "Opponent danger through their centre",
+        "observation": "9 of 10 opponent shots came through their attacking centre channel (90%). Channels are measured in the opponent's attacking direction.",
+        "suggestion": "Investigate earlier pressure or additional cover in the opponent's centre attacking channel.",
+        "tradeoff": "Extra cover in one channel can free space elsewhere; these counts do not identify the responsible defender.",
+        "metrics": {
+          "numerator": 9,
+          "denominator": 10,
+          "event_type": "shots"
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_2:1:53049:515",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 53049,
+            "time_s": 2121.96,
+            "team": "away",
+            "player_id": "Player24",
+            "event": "shot",
+            "x0": -44.1,
+            "y0": -2.719999999999999,
+            "x1": -53.550000000000004,
+            "y1": -1.3600000000000012
+          },
+          {
+            "event_id": "metrica_2:1:18515:198",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 18515,
+            "time_s": 740.6,
+            "team": "away",
+            "player_id": "Player22",
+            "event": "shot",
+            "x0": -31.500000000000004,
+            "y0": -10.200000000000001,
+            "x1": -37.8,
+            "y1": -11.559999999999999
+          },
+          {
+            "event_id": "metrica_2:1:63362:607",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 63362,
+            "time_s": 2534.48,
+            "team": "away",
+            "player_id": "Player23",
+            "event": "shot",
+            "x0": -45.150000000000006,
+            "y0": -0.6800000000000006,
+            "x1": -53.550000000000004,
+            "y1": 6.799999999999999
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "match_id": "metrica_2",
+    "team": "away",
+    "score": {
+      "home": 3,
+      "away": 2
+    },
+    "outcome": "loss",
+    "training_match_ids": [
+      "metrica_1"
+    ],
+    "quality": {
+      "tracking_rows": 3188704,
+      "events": 1164,
+      "periods": [
+        1,
+        2
+      ],
+      "fps": 25.0,
+      "duplicate_objects": 0,
+      "missing_positions": 0,
+      "nonfinite_positions": 0,
+      "out_of_bounds": 21888,
+      "frame_gaps": 0,
+      "conflicting_clocks": 0,
+      "event_tracking_coverage": 1.0,
+      "alignment_median_m": 0.34270440995709767,
+      "alignment_p90_m": 0.5104680735842732,
+      "shots_in_attacking_half": 1.0
+    },
+    "comparisons": [
+      {
+        "team": "home",
+        "passes": 639,
+        "completed": 543,
+        "completion_rate": 0.8497652582159625,
+        "buildup_passes": 294,
+        "buildup_losses": 49,
+        "buildup_loss_rate": 0.16666666666666666,
+        "buildup_cost": 0.9162976330997747,
+        "final_third_entries": 41,
+        "pass_value_added": 1.942757429859024,
+        "modeling_shots": 13
+      },
+      {
+        "team": "away",
+        "passes": 502,
+        "completed": 421,
+        "completion_rate": 0.8386454183266933,
+        "buildup_passes": 246,
+        "buildup_losses": 39,
+        "buildup_loss_rate": 0.15853658536585366,
+        "buildup_cost": 0.8081965529372781,
+        "final_third_entries": 30,
+        "pass_value_added": 1.5160049759491687,
+        "modeling_shots": 10
+      }
+    ],
+    "findings": [
+      {
+        "category": "buildup",
+        "title": "Buildup losses on the left",
+        "observation": "13 of 67 buildup passes in this channel were lost (19%); total modeled cost 0.117 xT. Median nearest-opponent distance was 2.9 m.",
+        "suggestion": "Investigate offering a closer passing option on the left, or varying the buildup route.",
+        "tradeoff": "Bringing support toward the ball can leave less space occupied further forward.",
+        "metrics": {
+          "numerator": 13,
+          "denominator": 67,
+          "rate": 0.19402985074626866,
+          "cost": 0.11664423625071857
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_2:2:93189:856",
+            "match_id": "metrica_2",
+            "period": 2,
+            "frame": 93189,
+            "time_s": 3727.56,
+            "team": "away",
+            "player_id": "Player21",
+            "event": "pass",
+            "x0": 24.15,
+            "y0": -13.599999999999998,
+            "x1": 17.850000000000005,
+            "y1": -12.240000000000004
+          },
+          {
+            "event_id": "metrica_2:2:104537:965",
+            "match_id": "metrica_2",
+            "period": 2,
+            "frame": 104537,
+            "time_s": 4181.48,
+            "team": "away",
+            "player_id": "Player20",
+            "event": "pass",
+            "x0": 37.8,
+            "y0": -11.560000000000002,
+            "x1": 14.700000000000001,
+            "y1": -25.84
+          },
+          {
+            "event_id": "metrica_2:1:9481:111",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 9481,
+            "time_s": 379.24,
+            "team": "away",
+            "player_id": "Player23",
+            "event": "pass",
+            "x0": 3.150000000000003,
+            "y0": -17.0,
+            "x1": -4.200000000000004,
+            "y1": -5.440000000000001
+          }
+        ]
+      },
+      {
+        "category": "progression",
+        "title": "Limited direct entries from the right",
+        "observation": "8 of 148 passes starting outside the final third crossed into it successfully (5%). Other passes may be useful circulation; this does not establish poor decisions.",
+        "suggestion": "Review the supporting moments for a forward passing option, and compare routes through the other channels.",
+        "tradeoff": "More direct progression can increase turnover exposure; low entry rate alone does not justify forcing a pass.",
+        "metrics": {
+          "numerator": 140,
+          "denominator": 148,
+          "entries": 8,
+          "entry_rate": 0.05405405405405406
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_2:1:16643:168",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 16643,
+            "time_s": 665.72,
+            "team": "away",
+            "player_id": "Player15",
+            "event": "pass",
+            "x0": 32.55,
+            "y0": 18.36,
+            "x1": 26.25,
+            "y1": 13.599999999999998
+          },
+          {
+            "event_id": "metrica_2:1:57992:545",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 57992,
+            "time_s": 2319.68,
+            "team": "away",
+            "player_id": "Player15",
+            "event": "pass",
+            "x0": -0.0,
+            "y0": 25.16,
+            "x1": -2.100000000000002,
+            "y1": 24.48
+          },
+          {
+            "event_id": "metrica_2:2:107641:978",
+            "match_id": "metrica_2",
+            "period": 2,
+            "frame": 107641,
+            "time_s": 4305.64,
+            "team": "away",
+            "player_id": "Player16",
+            "event": "pass",
+            "x0": 12.6,
+            "y0": 18.36,
+            "x1": 11.549999999999999,
+            "y1": -8.16
+          }
+        ]
+      },
+      {
+        "category": "danger",
+        "title": "Opponent danger through their centre",
+        "observation": "9 of 13 opponent shots came through their attacking centre channel (69%). Channels are measured in the opponent's attacking direction.",
+        "suggestion": "Investigate earlier pressure or additional cover in the opponent's centre attacking channel.",
+        "tradeoff": "Extra cover in one channel can free space elsewhere; these counts do not identify the responsible defender.",
+        "metrics": {
+          "numerator": 9,
+          "denominator": 13,
+          "event_type": "shots"
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_2:1:12202:136",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 12202,
+            "time_s": 488.08,
+            "team": "home",
+            "player_id": "Player10",
+            "event": "shot",
+            "x0": 47.25,
+            "y0": 3.400000000000003,
+            "x1": 53.550000000000004,
+            "y1": 2.040000000000002
+          },
+          {
+            "event_id": "metrica_2:2:73983:698",
+            "match_id": "metrica_2",
+            "period": 2,
+            "frame": 73983,
+            "time_s": 2959.32,
+            "team": "home",
+            "player_id": "Player9",
+            "event": "shot",
+            "x0": 47.24999999999999,
+            "y0": -1.3600000000000012,
+            "x1": 53.550000000000004,
+            "y1": -2.040000000000002
+          },
+          {
+            "event_id": "metrica_2:2:121027:1035",
+            "match_id": "metrica_2",
+            "period": 2,
+            "frame": 121027,
+            "time_s": 4841.08,
+            "team": "home",
+            "player_id": "Player12",
+            "event": "shot",
+            "x0": 30.450000000000003,
+            "y0": -5.439999999999998,
+            "x1": 53.550000000000004,
+            "y1": -2.7200000000000024
+          }
+        ]
+      }
+    ]
+  }
+]

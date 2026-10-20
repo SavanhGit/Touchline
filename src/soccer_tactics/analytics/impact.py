@@ -33,8 +33,8 @@ def add_pressure(passes: pd.DataFrame, tracking: pd.DataFrame) -> pd.DataFrame:
     """Add pressure_m: distance from the pass origin to the nearest opponent at the pass frame."""
     p = passes.assign(_row=np.arange(len(passes)))
     tp = tracking[(tracking["team"] != "ball") & tracking["frame"].isin(p["frame"].unique())]
-    tp = tp[["match_id", "frame", "team", "x", "y"]].rename(columns={"team": "opp", "x": "px", "y": "py"})
-    m = p[["_row", "match_id", "frame", "team", "x0", "y0"]].merge(tp, on=["match_id", "frame"])
+    tp = tp[["match_id", "period", "frame", "team", "x", "y"]].rename(columns={"team": "opp", "x": "px", "y": "py"})
+    m = p[["_row", "match_id", "period", "frame", "team", "x0", "y0"]].merge(tp, on=["match_id", "period", "frame"])
     m = m[m["opp"] != m["team"]]
     near = np.hypot(m["x0"] - m["px"], m["y0"] - m["py"]).groupby(m["_row"]).min()
     pressure = np.full(len(p), np.nan)
@@ -78,7 +78,7 @@ def avg_position(tracking: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def player_impact(passes: pd.DataFrame, tracking: pd.DataFrame, min_minutes: float = 15.0) -> pd.DataFrame:
+def player_impact(passes: pd.DataFrame, tracking: pd.DataFrame, min_minutes: float = 15.0, *, fps: float | None = None) -> pd.DataFrame:
     """One row per player and match, from `pass_values` output.
 
     impact_p90 and detriment_p90 are xT added and build-up cost per 90 minutes on the pitch;
@@ -86,7 +86,18 @@ def player_impact(passes: pd.DataFrame, tracking: pd.DataFrame, min_minutes: flo
     `min_minutes` are dropped, since per-90 rates of a cameo are noise. avg_pressure_m is the
     mean nearest-opponent distance over the player's passes (smaller = more pressure faced).
     avg_x and is_gk come from `avg_position`."""
-    minutes = tracking[tracking["team"] != "ball"].groupby(KEYS).size().div(FPS * 60).rename("minutes")
+    from soccer_tactics.match import infer_fps
+
+    if fps is not None:
+        try:
+            valid_fps = bool(np.isfinite(fps) and fps > 0)
+        except (TypeError, ValueError):
+            valid_fps = False
+        if not valid_fps:
+            raise ValueError("fps must be positive and finite")
+    counts_by_player = tracking[tracking["team"] != "ball"].groupby(KEYS).size()
+    rates = {mid: fps if fps is not None else infer_fps(part) for mid, part in tracking.groupby("match_id")}
+    minutes = counts_by_player.div(counts_by_player.index.get_level_values("match_id").map(rates).to_numpy() * 60).rename("minutes")
     p = passes.assign(
         buildup_turnover=passes["buildup"] & ~passes["success"],
         buildup_cost=passes["turnover_cost"].where(passes["buildup"], 0.0),
