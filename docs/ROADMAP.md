@@ -35,4 +35,4 @@ Stream validated data through incremental analytics. Measure latency and data co
 
 Public hosting follows a local portfolio demo and a dataset redistribution review. No hosting, authentication, API costs, live video, or learned forecast is required for V1.
 
-V1 portfolio artifacts: [featured example](demo/featured-analysis.md), [four screenshots and capture notes](demo/README.md), and a [54-second sampled browser walkthrough](demo/walkthrough.mp4). The walkthrough packages real browser captures; continuous recording remains unfinished. Reproducible Windows setup is in the [main README](../README.md).
+V1 portfolio artifacts: [featured example](demo/featured-analysis.md), [four screenshots and capture notes](demo/README.md), and a [80-second edited browser walkthrough](demo/walkthrough.mp4). The walkthrough packages 240 sequential real browser captures at 3 fps; it is edited low-frame-rate browser footage, not match video or seamless high-frame-rate screen recording. Reproducible Windows setup is in the [main README](../README.md).

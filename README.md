@@ -13,7 +13,7 @@ The [featured analysis](docs/demo/featured-analysis.md) examines game 1's anonym
 | Players | Pass impact, buildup turnover count/cost, tracked minutes and nearest-opponent context | [Players](docs/demo/players.png) |
 | Evidence | Source-event arrow, timestamp, player positions, trails, slider and optional control | [Evidence](docs/demo/evidence.png) |
 
-[Watch the 54-second sampled browser walkthrough](docs/demo/walkthrough.mp4). See [capture notes and attribution](docs/demo/README.md) and [release validation](docs/VALIDATION.md).
+[Watch the 80-second edited browser walkthrough](docs/demo/walkthrough.mp4). See [capture notes and attribution](docs/demo/README.md) and [release validation](docs/VALIDATION.md).
 
 ## Windows setup
 
