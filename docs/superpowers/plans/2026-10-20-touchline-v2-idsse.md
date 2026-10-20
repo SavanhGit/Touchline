@@ -44,7 +44,7 @@
 
 **Interfaces:**
 - Preserve `list_idsse_matches(root: str | Path) -> list[str]` and `load_idsse_game(root: str | Path, match_id: str) -> tuple[pd.DataFrame, pd.DataFrame]`.
-- Add `IdsseSourceMatch` with fields `match_id: str`, `files: dict[str, Path]`, `positions: object`, `events: object`, `teamsheets: object`, `pitch: object`, and `match_information: object`; `_read_idsse_source(root: str | Path, match_id: str) -> IdsseSourceMatch` discovers and parses exactly one complete triplet.
+- Add `IdsseSourceMatch` with fields `match_id: str`, `files: dict[str, Path]`, `positions: object`, `position_clocks: dict[str, pd.DataFrame]`, `events: object`, `teamsheets: object`, `pitch: object`, and `match_information: object`; `_read_idsse_source(root: str | Path, match_id: str) -> IdsseSourceMatch` discovers and parses exactly one complete triplet. Each `position_clocks` table is keyed by source period name and has source `frame` (XML `N`) and `timestamp` (unmodified XML `T`) columns.
 - Source helpers must retain unsupported and unusable source-event counts with stable reason codes for the quality record; canonical events continue to use `schema.EVENT_COLUMNS`.
 
 - [ ] **Step 1: Write failing source-contract tests** for complete/incomplete triplets, duplicate file-family IDs, lazy missing-Floodlight error text, event-code mapping, penalty/own-goal semantics, missing coordinates, and separate first/second-half objects.
@@ -71,7 +71,7 @@
 
 - [ ] **Step 1: Write failing bundle tests** for default-empty backward-compatible metadata, source labels/IDs, goals and penalty records, match score, actual source FPS, and `validate_bundle` rejection of invalid metadata-derived canonical rows.
 - [ ] **Step 2: Run `pytest tests/test_idsse_bundle.py tests/test_match_bundle.py -q`** and confirm the new API/metadata expectations fail.
-- [ ] **Step 3: Implement `load_idsse_bundle`** using Task 1 source objects. Convert source coordinates to centered metres, derive and apply per-period orientation to tracking and events, and derive frame/time alignment from observed clocks in the same period only. Assign an event frame only within half a source frame; retain the original event time and alignment error in bundle quality. Extract complete goals separately from modeling events and populate score-known, team labels, source metadata, FPS, and quality.
+- [ ] **Step 3: Implement `load_idsse_bundle`** using Task 1 source objects. Convert source coordinates to centered metres, derive and apply per-period orientation to tracking and events, and align each absolute event timestamp only against observed frame timestamps in the same period. Assign an event frame only within half a source frame; keep canonical `time_s` as Floodlight's period-relative `gameclock` and retain the source timestamp and alignment error distribution in bundle quality. Extract complete goals separately from modeling events and populate score-known, team labels, source metadata, FPS, and quality.
 - [ ] **Step 4: Verify bundle tests** with `pytest tests/test_idsse_bundle.py tests/test_match_bundle.py -q`; include repeated frame IDs and clock resets across periods, missing positions, and source FPS not equal to 25.
 - [ ] **Step 5: Commit and push**: `git add src/soccer_tactics/match.py src/soccer_tactics/loaders/idsse_bundle.py src/soccer_tactics/loaders/__init__.py tests/test_idsse_bundle.py tests/test_match_bundle.py && git commit -m "feat: load IDSSE match bundles"`.
 
