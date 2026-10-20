@@ -1,4 +1,4 @@
-# Tested direct dependencies on Python 3.12; install project extras with this constraints file.
+# Tested direct dependencies on Python 3.12; not a complete transitive lockfile.
 numpy==2.3.5
 pandas==3.0.1
 pyarrow==26.0.0

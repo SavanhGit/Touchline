@@ -34,3 +34,5 @@ Integrate a video pipeline such as Roboflow Sports through the existing canonica
 Stream validated data through incremental analytics. Measure latency and data coverage. Use past-only motion features: the current centered smoothing is suitable for post-match analysis and must not be reused as a live feature. Validate without future frames.
 
 Public hosting follows a local portfolio demo and a dataset redistribution review. No hosting, authentication, API costs, live video, or learned forecast is required for V1.
+
+V1 portfolio artifacts: [featured example](demo/featured-analysis.md), [four screenshots and capture notes](demo/README.md), and a [54-second sampled browser walkthrough](demo/walkthrough.mp4). The walkthrough packages real browser captures; continuous recording remains unfinished. Reproducible Windows setup is in the [main README](../README.md).
