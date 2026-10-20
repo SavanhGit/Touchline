@@ -4,6 +4,8 @@ The first release is **Touchline**, a local post-match dashboard. Its question i
 
 ## V1 — Evidence before explanation
 
+**Completed:** 2026-10-20 at 12:07:49 PM EDT — release checkpoint `c8d032b`, pushed to `codex/tactical-analyst-test` after the 243-test suite and real-match release validation passed.
+
 - Metrica sample games 1–2; both home and away perspectives.
 - Complete goal context alongside penalty-excluded modeling events.
 - Held-out xT, buildup turnover patterns, direct final-third entries, and opponent danger channels.
