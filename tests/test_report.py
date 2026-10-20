@@ -42,6 +42,21 @@ def test_analyze_match_accepts_a_training_iterator():
     assert report.provenance["training_match_ids"] == ["training"]
 
 
+def test_bundle_training_rejects_mixed_source():
+    selected = replace(bundle("selected"), source="metrica")
+    other = replace(bundle("other"), source="idsse")
+    with pytest.raises(ValueError, match="source"):
+        analyze_match(selected, "home", [other])
+
+
+def test_metrica_bundle_training_still_produces_report():
+    selected = replace(bundle("selected"), source="metrica")
+    other = replace(bundle("other"), source="metrica")
+    report = analyze_match(selected, "home", [other])
+    assert report.provenance["source"] == "metrica"
+    assert report.provenance["training_match_ids"] == ["other"]
+
+
 @pytest.mark.parametrize("passes,losses,qualifies", [(5, 3, True), (4, 3, False), (5, 2, False)])
 def test_exact_buildup_eligibility_thresholds(passes, losses, qualifies):
     b = bundle()
