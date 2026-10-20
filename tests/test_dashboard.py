@@ -79,6 +79,40 @@ def test_missing_sources_stop_before_modeling(tmp_path, sources):
     assert not app.title
 
 
+@pytest.mark.parametrize("broken", ["tracking", "events"])
+def test_nonempty_malformed_sources_show_actionable_unavailable_state(tmp_path, broken):
+    root = tmp_path / "sources"
+    tracking = ",,,Home,,,\n,,,1,,,\nPeriod,Frame,Time [s],Player1,,Ball,\n1,1,0.04,0.2,0.3,0.4,0.5\n"
+    for game in (1, 2):
+        directory = root / "data" / f"Sample_Game_{game}"
+        directory.mkdir(parents=True)
+        for team in ("Home", "Away"):
+            (directory / f"Sample_Game_{game}_RawTrackingData_{team}_Team.csv").write_text(tracking)
+        (directory / f"Sample_Game_{game}_RawEventsData.csv").write_text("Team,Type\nHome,PASS\n")
+    broken_name = ("Sample_Game_1_RawTrackingData_Home_Team.csv" if broken == "tracking"
+                   else "Sample_Game_1_RawEventsData.csv")
+    if broken == "tracking":
+        (root / "data" / "Sample_Game_1" / broken_name).write_text(",,,Home,,\n,,,1,,\n")
+    script = f'''
+import sys, importlib
+from pathlib import Path
+sys.path.insert(0, {str(Path(__file__).resolve().parents[1])!r})
+import app as dashboard
+# Earlier synthetic AppTests replace module loaders; restore the real ingestion boundary.
+importlib.reload(dashboard)
+dashboard.DATA = Path({str(root)!r})
+dashboard.main()
+'''
+    app = AppTest.from_string(script, default_timeout=30).run()
+    assert not app.exception
+    assert not app.title
+    assert len(app.error) == 1
+    message = app.error[0].value
+    assert "Match analysis unavailable" in message
+    assert broken_name in message
+    assert "restore" in message.lower() or "download" in message.lower()
+
+
 def test_empty_report_unknown_score_and_unavailable_rates(tmp_path):
     app = synthetic_app(tmp_path, empty=True).run()
     assert not app.exception

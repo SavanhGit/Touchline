@@ -20,8 +20,19 @@ from soccer_tactics.schema import (
 
 def _read_team(path: Path, team: str) -> pd.DataFrame:
     with open(path) as f:
-        header = [next(f) for _ in range(3)][2].rstrip("\n").split(",")
+        metadata = [f.readline() for _ in range(3)]
+    header = metadata[2].rstrip("\r\n").split(",")
     labels = [header[i] for i in range(3, len(header) - 1, 2)]  # x columns; y follows each
+    if (not all(line.strip() for line in metadata)
+            or header[:3] != ["Period", "Frame", "Time [s]"]
+            or len(header) < 7 or (len(header) - 3) % 2
+            or not all(labels) or len(set(labels)) != len(labels)
+            or "Ball" not in labels or any(header[4::2])):
+        raise ValueError(
+            f"Invalid or incomplete Metrica tracking metadata/header in {path}. "
+            "Expected two metadata rows and a Period,Frame,Time [s] header with player/ball x-y pairs. "
+            "Download or restore the complete source CSV from Metrica Sports sample-data."
+        )
     cols = ["period", "frame", "time_s"] + [f"{l}__{a}" for l in labels for a in "xy"]
     raw = pd.read_csv(path, skiprows=3, header=None, names=cols)
 
@@ -64,7 +75,16 @@ def _load_events_raw(d: Path, game: int, length: float, width: float) -> pd.Data
     """Passes and shots, un-oriented. Metrica logs every PASS as completed (the receiver is a
     teammate); a failed pass is a later BALL LOST row from the intended receiver's side with
     the interception point as its end. Penalties are dropped: they would skew shot conversion."""
-    e = pd.read_csv(d / f"Sample_Game_{game}_RawEventsData.csv")
+    path = d / f"Sample_Game_{game}_RawEventsData.csv"
+    e = pd.read_csv(path)
+    required = {"Team", "Type", "Subtype", "Period", "Start Frame", "Start Time [s]",
+                "From", "To", "Start X", "Start Y", "End X", "End Y"}
+    missing = required - set(e.columns)
+    if missing:
+        raise ValueError(
+            f"Invalid Metrica event header in {path}; missing columns: {', '.join(sorted(missing))}. "
+            "Download or restore the complete source CSV from Metrica Sports sample-data."
+        )
     sub = e["Subtype"].fillna("")
     after_penalty = (e["Type"].shift(1) == "SET PIECE") & (e["Subtype"].shift(1) == "PENALTY")
     done = e["Type"] == "PASS"
