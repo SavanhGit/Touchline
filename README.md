@@ -15,6 +15,15 @@ The [featured analysis](docs/demo/featured-analysis.md) examines game 1's anonym
 
 [Watch the 80-second edited browser walkthrough](docs/demo/walkthrough.mp4). See [capture notes and attribution](docs/demo/README.md) and [release validation](docs/VALIDATION.md).
 
+## Roadmap
+
+- **V1 — Complete (October 20, 2026):** the local Metrica-based analysis dashboard, evidence views and portfolio demo.
+- **V2 — In progress:** validate IDSSE match data, canonical ingestion and held-out evaluation before adding validated matches to the selector.
+- **Next:** evidence-backed question answering, followed by richer tactical analysis.
+- **Later:** derive tracking from recorded video, then work toward live analysis.
+
+See the [full roadmap](docs/ROADMAP.md) for scope and validation details.
+
 ## Windows setup
 
 Install Python 3.12 and Git. In PowerShell, from this repository:
