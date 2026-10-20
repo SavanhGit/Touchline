@@ -50,6 +50,6 @@ xT is trained on game 2 only. Teams and player IDs are anonymous. Data: [Metrica
 
 ## Verification and interpretation
 
-Every listed moment was matched to the original source event CSV by period, frame, team, and player. Both matches have 100% event-to-player tracking coverage, with median positional alignment under 0.35 m. See `release-validation.json` for all four team reports and quality results.
+The source audit compared all displayed event fields, including type, player, team, period, source seconds and coordinates, with the original event CSV. Event-to-player tracking coverage is 100.0%; median event alignment is 0.331 m and p90 alignment is 0.506 m. See `release-validation.json` for all four team reports and measured quality results.
 
 Counts exclude carries. Shot-pattern findings exclude penalties, while the result includes every recorded goal. Turnover cost and player detriment are exploratory xT quantities. Pitch control is a simplified spatial model. Channel concentrations describe locations, not defensive responsibility.
