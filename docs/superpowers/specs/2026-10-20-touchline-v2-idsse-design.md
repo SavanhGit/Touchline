@@ -1,5 +1,9 @@
 # Touchline V2: IDSSE Match Catalogue Design
 
+## Scope amendment (2026-10-20)
+
+This amendment supersedes conflicting requirements below. The IDSSE paper and source-parser audit do not establish event-to-tracking synchronization or pass-destination semantics. V2 may use IDSSE only for source event-origin analysis: retain source event coordinates, timestamps, and event-code provenance; do not assign tracking frames or present tracking playback as synchronized evidence. Pass endpoints remain unknown and must not feed xT, progression, pass-route, or any destination-dependent metric. Existing Metrica endpoint-based analysis remains unchanged and continues to provide those features. IDSSE tracking may be audited and retained for future work, but stays outside reports until synchronization and attack direction are independently validated. IDSSE xT training and leave-one-match-out claims are deferred; Metrica training remains as-is. Catalogue readiness for IDSSE will depend on source event-origin quality, not held-out xT.
+
 ## Status and origin
 
 This design follows the V2 direction in [`docs/ROADMAP.md`](../ROADMAP.md): validate the existing IDSSE XML adapter against real match files, then add IDSSE matches to the analysis catalogue only after data-quality and held-out-evaluation gates pass. V1 remains the Metrica games 1–2 release and is complete on the test branch.

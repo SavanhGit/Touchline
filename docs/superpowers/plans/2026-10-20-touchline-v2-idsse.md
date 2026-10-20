@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan task by task. Each task is implemented and reviewed before the next begins. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Validate the seven IDSSE match sources and add only quality-approved, held-out-evaluated matches to Touchline's local catalogue.
+**Goal:** Validate the seven IDSSE match sources and add only quality-approved source-event-origin views to Touchline's local catalogue, while preserving Metrica endpoint-based analysis.
 
-**Architecture:** Keep IDSSE XML parsing behind the existing loader boundary, preserve `load_idsse_game`, and add an IDSSE `MatchBundle` loader with complete goals, metadata, canonical orientation, and quality results. Run a reproducible leave-one-match-out audit using event-only training inputs, then let the dashboard consume only the accepted validation manifest while retaining the Metrica path.
+**Architecture:** Keep IDSSE XML parsing behind the existing loader boundary and preserve `load_idsse_game`. Represent IDSSE event origins and source time/provenance separately from unsynchronized tracking; do not claim canonical pass endpoints, attack direction, or event/tracking synchronization. Keep Metrica's existing endpoint-based reports and training intact. Let the dashboard consume only the accepted source-quality manifest.
 
 **Tech Stack:** Python 3.10+, pandas, NumPy, optional Floodlight (`.[idsse]`), pytest, Streamlit, Plotly.
 
@@ -17,12 +17,12 @@
 - Keep raw XML and other downloaded match data outside Git.
 - Do not treat unvalidated matches as selectable or use them as xT training data.
 - Do not add automatic user uploads, downloads, live/video tracking, public hosting, chat, or new tactical models.
-- Match IDs remain unique across providers; reject self-training and mixed-source training in V2.
-- Event timestamps may match observed tracking only within the same period and only within half a source frame.
+- Match IDs remain unique across providers; do not use IDSSE events to train xT.
+- IDSSE source event times remain distinct from tracking frame times; no event-to-tracking frame assignment is report evidence in this release.
 - Only documented IDSSE event types with valid spatial and time keys enter reports; unknown event codes remain in quality totals.
 - Extract scored goals independently of modeling shots so penalty goals remain in scores while penalty shots stay excluded from modeling.
 - Attribute the Deutsche Fußball Liga (DFL) and cite Bassek et al., “An integrated dataset of spatiotemporal and event data in elite soccer,” *Scientific Data* 12, 195 (2025).
-- Require all seven candidates to appear in the real-data audit; require at least two accepted matches for leave-one-match-out evaluation; a missing or skipped real-data gate is not success.
+- Require all seven candidates to appear in the real-data audit; each accepted event-origin match must pass explicit source-quality checks; a missing or skipped real-data gate is not success.
 - Commit each reviewed, passing task separately to the current test branch; do not merge to `main`.
 
 ## Review Focus
@@ -159,3 +159,15 @@
 ## Execution Order and Release Gate
 
 Run Tasks 1–6 in order. Each task gets a fresh implementer, a fresh reviewer, a focused test run, and a separate commit pushed to `codex/tactical-analyst-test` before starting the next task. The broad final review must use the strongest available review model and inspect the full branch against the spec. Do not mark V2 complete or expose unaccepted IDSSE matches if any of the seven source audits is missing, fewer than two matches pass both gates, any accepted held-out report trains on itself or another provider, the generated manifest is absent/non-deterministic, or the Metrica regression gate fails.
+
+## Approved source-scope amendment
+
+The earlier Task 2 canonical pass-endpoint and event/tracking frame-alignment assumptions are superseded by the design amendment dated 2026-10-20. IDSSE event-origin evidence must remain separate from tracking; no IDSSE event is assigned a tracking frame, and IDSSE pass destinations cannot enter xT/progression/pass-route analytics. Metrica's existing endpoint-based reports/training stay intact. IDSSE may enter only event-origin views after source-coordinate, event-code, score, and event-time quality checks pass. The dashboard must label these source limitations and omit synchronized tracking playback for IDSSE.
+
+- [ ] Task 2 scope correction: replace the canonical endpoint/observed-frame join claim with source-event-origin representation; preserve source pair coordinates and raw timestamps as provenance, and explicitly mark endpoints/synchronization/direction unavailable where unvalidated.
+- [ ] Task 3 scope correction: preserve Metrica xT/training behavior; ensure IDSSE inputs cannot contribute to xT or any endpoint-dependent report measure.
+- [ ] Task 4 scope correction: validate per-match event-origin quality and source score/goals; remove the IDSSE held-out xT acceptance gate. Document unresolved synchronization/attack direction as limitations, not as proven data quality.
+- [ ] Task 5 scope correction: enable only accepted IDSSE event-origin views; block tracking playback and endpoint-based metrics for IDSSE. Keep Metrica selection and analysis unchanged.
+- [ ] Task 6 scope correction: document the source limits; do not mark IDSSE endpoint/xT validation or full V2 complete while those gates remain open.
+
+The spec amendment takes precedence over the legacy task text below; apply the task-specific corrections as each brief is prepared.

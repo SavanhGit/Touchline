@@ -17,6 +17,13 @@ def test_unknown_score_and_known_goalless_match_are_distinct():
     assert replace(make_bundle(), score_known=True).score == {"home": 0, "away": 0}
 
 
+def test_existing_bundle_constructors_get_independent_empty_metadata():
+    first, second = make_bundle(), make_bundle("other")
+    assert first.metadata == second.metadata == {}
+    first.metadata["provider"] = "test"
+    assert second.metadata == {}
+
+
 def test_invalid_bundle_without_quality_metadata():
     b = make_bundle()
     duplicate = replace(b, tracking=pd.concat([b.tracking, b.tracking.iloc[:1]]), quality={})

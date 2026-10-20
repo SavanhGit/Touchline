@@ -114,17 +114,17 @@ def test_exact_codes_and_bad_spatial_or_time_keys_are_counted():
     )
     selection = idsse.select_idsse_events(source, MATCH)
     assert selection.events.columns.tolist() == EVENT_COLUMNS
-    assert selection.events.event.tolist() == ["pass", "pass"]
-    assert selection.events.frame.tolist() == [-1, -1]
-    assert selection.events.time_s.tolist() == [1.25, 1.25]
+    assert selection.events.event.tolist() == ["pass", "pass", "pass"]
+    assert selection.events.frame.tolist() == [-1, -1, -1]
+    assert selection.events.time_s.tolist() == [1.25, 1.25, 1.25]
+    assert selection.events[["x1", "y1"]].isna().all().all()
     assert selection.total == 5
     assert selection.exclusions.reason.value_counts().to_dict() == {
         "unsupported_event_code": 1,
-        "missing_pass_endpoint": 1,
         "invalid_event_time": 1,
     }
     assert selection.exclusions.source_code.tolist() == [
-        "MyPassImposter", "Play_Pass", "ShotAtGoal_SavedShot"]
+        "MyPassImposter", "ShotAtGoal_SavedShot"]
 
 
 def test_goal_records_credit_own_goal_to_opponent_and_keep_penalty_separate():

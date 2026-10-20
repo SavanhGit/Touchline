@@ -1,8 +1,8 @@
 """Source adapter for the IDSSE/DFL XML triplets.
 
 Floodlight is optional and is imported only for a requested complete match. DFL
-event coordinates are source coordinates; orientation and event/position clock
-alignment belong to the bundle boundary, which has both source objects here.
+event coordinates are source origins. Event and position clocks are distinct;
+neither synchronization nor attack direction is established here.
 """
 from dataclasses import dataclass
 from collections.abc import Mapping
@@ -186,11 +186,12 @@ def _pass_success(event: pd.Series) -> tuple[bool | None, str | None]:
 
 
 def select_idsse_events(event_objects: object, match_id: str) -> IdsseEventSelection:
-    """Select documented modeling codes; retain every source exclusion.
+    """Select documented event origins; retain every source exclusion.
 
-    ``frame=-1`` means alignment is pending: multiplying an event gameclock by
-    framerate would invent an observed frame. The original timestamp is kept
-    with each source row for period-local alignment at the bundle boundary.
+    ``frame=-1`` means no tracking frame has been established. ``time_s`` is
+    the source period-relative gameclock, not tracking frame time. Source
+    timestamps are retained in ``source_events``. IDSSE ``to_x``/``to_y``
+    have no validated endpoint meaning, so x1/y1 stay unavailable.
     """
     rows, goals, excluded, originals = [], [], [], []
     for segment, team_objects in event_objects.items():
@@ -233,9 +234,6 @@ def select_idsse_events(event_objects: object, match_id: str) -> IdsseEventSelec
                 if not _finite(event.get("at_x")) or not _finite(event.get("at_y")):
                     excluded.append((period, team, code, "missing_event_origin", timestamp))
                     continue
-                if kind == "pass" and (not _finite(event.get("to_x")) or not _finite(event.get("to_y"))):
-                    excluded.append((period, team, code, "missing_pass_endpoint", timestamp))
-                    continue
                 if kind == "pass":
                     pass_success, pass_reason = _pass_success(event)
                     if pass_reason is not None:
@@ -245,15 +243,12 @@ def select_idsse_events(event_objects: object, match_id: str) -> IdsseEventSelec
                     excluded.append((period, team, code, "penalty_shot_excluded", timestamp))
                     continue
                 x0, y0 = float(event["at_x"]), float(event["at_y"])
-                x1, y1 = (float(event["to_x"]), float(event["to_y"])) if kind == "pass" else (
-                    float(event["to_x"]) if _finite(event.get("to_x")) else x0,
-                    float(event["to_y"]) if _finite(event.get("to_y")) else y0)
                 success = pass_success if kind == "pass" else modeled_goal
                 source_row["canonical_index"] = len(rows)
                 rows.append((match_id, period, team, kind, success, player, None,
-                             -1, clock, x0, y0, x1, y1))
+                             -1, clock, x0, y0, float("nan"), float("nan")))
     return IdsseEventSelection(
-        validate_events(pd.DataFrame(rows, columns=EVENT_COLUMNS)),
+        validate_events(pd.DataFrame(rows, columns=EVENT_COLUMNS), require_pass_endpoints=False),
         pd.DataFrame(goals, columns=_GOAL_COLUMNS),
         pd.DataFrame(excluded, columns=_EXCLUSION_COLUMNS),
         pd.DataFrame(originals), len(originals),

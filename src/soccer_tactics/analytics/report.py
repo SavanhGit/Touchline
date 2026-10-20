@@ -96,6 +96,8 @@ def analyze_match(match_bundle: MatchBundle, team: str,
     if team not in {"home", "away"}:
         raise ValueError("team must be home or away")
     bundle = match_bundle
+    if bundle.metadata.get("event_capabilities", {}).get("pass_endpoints") is False:
+        raise ValueError("origin-only events cannot enter endpoint-based match analysis")
     validate_bundle(bundle)
     training_events = []
     training_match_ids = []
