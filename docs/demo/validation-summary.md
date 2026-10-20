@@ -15,7 +15,7 @@ All commands ran from the repository root with the existing `.venv`; each exited
 
 | Command | Observed result |
 |---|---|
-| `\.venv\Scripts\python.exe -m pytest tests/test_release_validation.py -q` | 21 passed in 51.60s |
+| `\.venv\Scripts\python.exe -m pytest tests/test_release_validation.py -q` | 26 passed in 37.92s |
 | `\.venv\Scripts\python.exe scripts/validate_release.py` | Validated 4 real team reports; exported `docs/demo` |
 | `\.venv\Scripts\python.exe scripts/validate_xt_split_half.py data/raw/metrica` | xT surface Spearman 0.646 raw, 0.956 after one smoothing pass; shuffled-cell baseline mean -0.002, 95th percentile 0.110 |
 | `\.venv\Scripts\python.exe scripts/validate_pitch_control.py data/raw/metrica` | 2,162 passes; velocity pitch-control AUC 0.964, bootstrap 95% interval [0.954, 0.972] |
@@ -28,5 +28,7 @@ The release command was run twice with unchanged input. SHA-256 was identical ac
 
 - `release-validation.json`: `3de837ec1831975dc24b2d9ae1a89924f59509901e51bc62c29367f973b55bf1`
 - `featured-analysis.md`: `6e92614a204fb11f13e1a3d93fc1f8648871b0e7cc66d31d32abcc1c47249b9d`
+
+Follow-up review added regressions requiring source-orientation evidence for every evidence period, checking win/draw prose, comparing the complete penalty-excluded modeling-shot identity set to raw `SHOT` rows, and serializing nested NaN/infinity values as JSON `null`. The focused suite passed 26 tests after these changes, and the release export still produced the same hashes.
 
 Run timing is approximate and intentionally excluded from the deterministic JSON report.

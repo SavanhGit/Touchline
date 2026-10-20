@@ -41,6 +41,27 @@ def _source_orientation_flips(raw_events: pd.DataFrame) -> dict:
     return flips
 
 
+def _verify_modeling_shots(bundle: MatchBundle, raw_events: pd.DataFrame) -> None:
+    """Require canonical shots to equal every raw shot outside a penalty set piece."""
+    after_penalty = (raw_events.Type.shift() == "SET PIECE") & (raw_events.Subtype.shift() == "PENALTY")
+    source = raw_events[(raw_events.Type == "SHOT") & ~after_penalty].copy()
+    canonical = bundle.events[bundle.events.event == "shot"]
+
+    def source_identity(row):
+        return (int(row.Period), int(row["Start Frame"]), round(float(row["Start Time [s]"]), 8),
+                str(row.Team).lower(), str(row.From).replace(" ", ""),
+                str(row.Subtype or "").endswith("GOAL"))
+
+    def canonical_identity(row):
+        return (int(row.period), int(row.frame), round(float(row.time_s), 8),
+                str(row.team), str(row.player_id), bool(row.success))
+
+    expected = sorted(source_identity(row) for _, row in source.iterrows())
+    actual = sorted(canonical_identity(row) for row in canonical.itertuples(index=False))
+    _require(actual == expected,
+             f"canonical modeling shots differ from penalty-excluded raw source for {bundle.match_id}")
+
+
 def verify_evidence(bundle: MatchBundle, evidence: Evidence, raw_events: pd.DataFrame) -> None:
     """Check every displayed field against canonical data and its original Metrica row.
 
@@ -49,7 +70,7 @@ def verify_evidence(bundle: MatchBundle, evidence: Evidence, raw_events: pd.Data
     conversion before comparing all coordinates.
     """
     _require(evidence.match_id == bundle.match_id, "evidence match does not match bundle")
-    canonical = bundle.events
+    canonical = bundle.events.reset_index(drop=True)
     selected = canonical[
         (canonical.match_id.astype(str) == str(evidence.match_id))
         & (canonical.period == evidence.period) & (canonical.frame == evidence.frame)
@@ -66,20 +87,7 @@ def verify_evidence(bundle: MatchBundle, evidence: Evidence, raw_events: pd.Data
     ]
     _require(len(exact) == 1, "evidence fields do not identify exactly one canonical event")
     event = exact.iloc[0]
-    ordered = bundle.events.reset_index(drop=True)
-    ordered_exact = ordered[
-        (ordered.match_id.astype(str) == str(evidence.match_id))
-        & (ordered.period == evidence.period) & (ordered.frame == evidence.frame)
-        & (ordered.team == evidence.team) & (ordered.player_id == evidence.player_id)
-        & (ordered.event == evidence.event)
-        & np.isclose(ordered.time_s, evidence.time_s, rtol=0, atol=1e-8)
-        & np.isclose(ordered.x0, evidence.x0, rtol=0, atol=1e-8)
-        & np.isclose(ordered.y0, evidence.y0, rtol=0, atol=1e-8)
-        & np.isclose(ordered.x1, evidence.x1, rtol=0, atol=1e-8)
-        & np.isclose(ordered.y1, evidence.y1, rtol=0, atol=1e-8)
-    ]
-    _require(len(ordered_exact) == 1, "canonical event order is ambiguous")
-    event_index = int(ordered_exact.index[0])
+    event_index = int(exact.index[0])
     expected_event_id = f"{bundle.match_id}:{int(event.period)}:{int(event.frame)}:{event_index}"
     _require(evidence.event_id == expected_event_id, "evidence ID does not identify its canonical event row")
 
@@ -111,7 +119,10 @@ def verify_evidence(bundle: MatchBundle, evidence: Evidence, raw_events: pd.Data
     ])
     canonical_xy = np.array([event.x0, event.y0, event.x1, event.y1], dtype=float)
     _require(np.isfinite(converted).all(), "source event has unavailable coordinates")
-    if _source_orientation_flips(raw_events).get(int(evidence.period), False):
+    flips = _source_orientation_flips(raw_events)
+    _require(int(evidence.period) in flips,
+             f"cannot independently infer source orientation for evidence period {evidence.period}")
+    if flips[int(evidence.period)]:
         converted = -converted
     _require(np.allclose(converted, canonical_xy, rtol=0, atol=1e-7),
              "source coordinates do not match canonical coordinates after normalized conversion/orientation")
@@ -134,15 +145,25 @@ def _json_safe(value):
 
 
 def _featured_markdown(featured: dict) -> str:
-    score = featured["score"]
+    score = featured.get("score") or {}
+    outcome = featured.get("outcome")
+    result_text = {"win": "The away team won.", "draw": "The match was a draw.",
+                   "loss": "The away team lost."}.get(outcome)
+    if result_text is None:
+        away, home = score.get("away"), score.get("home")
+        result_text = ("The result is unavailable." if away is None or home is None else
+                       "The away team won." if away > home else
+                       "The away team lost." if away < home else "The match was a draw.")
     coverage = featured["quality"].get("event_tracking_coverage")
     median = featured["quality"].get("alignment_median_m")
     p90 = featured["quality"].get("alignment_p90_m")
     coverage_text = "unavailable" if coverage is None else f"{coverage:.1%}"
     median_text = "unavailable" if median is None else f"{median:.3f} m"
     p90_text = "unavailable" if p90 is None else f"{p90:.3f} m"
+    home_score, away_score = score.get("home"), score.get("away")
+    score_text = "Score unavailable." if home_score is None or away_score is None else f"Home {home_score}–{away_score} Away."
     lines = ["# Featured analysis: Metrica game 1, away team", "",
-             f"Home {score['home']}–{score['away']} Away. The away team lost.", "",
+             f"{score_text} {result_text}", "",
              "These patterns may have contributed; this report does not establish causation or promise that a suggested change would alter the result.", "",
              "xT is trained on game 2 only. Teams and player IDs are anonymous. Data: [Metrica Sports](https://github.com/metrica-sports/sample-data).", ""]
     for finding in featured["findings"]:
@@ -166,6 +187,7 @@ def run(root: Path, output: Path) -> None:
     for bundle, training in zip(bundles, bundles[::-1]):
         game = int(bundle.match_id.rsplit("_", 1)[1])
         raw = pd.read_csv(root / "data" / f"Sample_Game_{game}" / f"Sample_Game_{game}_RawEventsData.csv")
+        _verify_modeling_shots(bundle, raw)
         source_goals = raw[(raw.Type == "SHOT") & raw.Subtype.fillna("").str.endswith("GOAL")]
         expected_score = {team: int((source_goals.Team.str.lower() == team).sum()) for team in ("home", "away")}
         _require(bundle.score == expected_score, f"complete source score mismatch for {bundle.match_id}")
