@@ -76,6 +76,11 @@ def main():
     [data-testid="stSidebar"] {border-right:1px solid #28473d}
     .eyebrow {color:#69d6ab;font-size:.78rem;letter-spacing:.18em;font-weight:700}
     </style>""", unsafe_allow_html=True)
+    workspace = st.sidebar.selectbox("Workspace", ["Match analysis", "Video tracking"], key="workspace")
+    if workspace == "Video tracking":
+        from soccer_tactics.dashboard.video_tracking import render_video_tracking
+        render_video_tracking(st)
+        return
     with st.sidebar:
         st.markdown("## ⚽ TOUCHLINE")
         st.caption("SOCCER MATCH ANALYSIS")

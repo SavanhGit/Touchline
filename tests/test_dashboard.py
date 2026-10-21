@@ -93,6 +93,17 @@ def test_missing_sources_stop_before_modeling(tmp_path, sources):
     assert not app.title
 
 
+def test_workspace_switch_restores_match_analysis(tmp_path):
+    app = synthetic_app(tmp_path).run()
+    assert app.sidebar.selectbox(key="workspace").value == "Match analysis"
+    app.sidebar.selectbox(key="workspace").select("Video tracking").run()
+    assert not app.exception
+    assert app.title[0].value == "Local video tracking"
+    app.sidebar.selectbox(key="workspace").select("Match analysis").run()
+    assert not app.exception
+    assert app.title[0].value == "What shaped the result?"
+
+
 @pytest.mark.parametrize("broken", ["tracking", "events"])
 def test_nonempty_malformed_sources_show_actionable_unavailable_state(tmp_path, broken):
     root = tmp_path / "sources"
