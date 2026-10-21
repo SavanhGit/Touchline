@@ -89,3 +89,9 @@ def test_defensive_transition_clips_exact_window_and_just_after():
     t=summarize_transitions(e,segment_possessions(e,pd.DataFrame()),pd.DataFrame())
     assert t.iloc[0].event_ids==["win","boundary"]
     assert t.iloc[0].end_time_s==10
+
+
+def test_defensive_transition_requires_follow_on_by_action_team():
+    e=ev([{"event_id":"win","event":"recovery"},
+          {"event_id":"lost","team":"away","time_s":1}])
+    assert summarize_transitions(e,segment_possessions(e,pd.DataFrame()),pd.DataFrame()).empty

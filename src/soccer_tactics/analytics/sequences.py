@@ -112,7 +112,8 @@ def summarize_transitions(events: pd.DataFrame, possessions: pd.DataFrame, pass_
         limit = float(start.time_s) + window_s
         if require_following:
             following = source[(source.index > start_i) & (source.match_id == start.match_id) &
-                (source.period == start.period) & (source.time_s <= limit)]
+                (source.period == start.period) & (source.team == start.team) &
+                (source.time_s <= limit)]
             if following.empty:
                 continue
         # Restrict to this possession before clipping by clock. Time alone can pick up
