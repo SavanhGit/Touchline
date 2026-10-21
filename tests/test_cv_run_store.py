@@ -33,8 +33,10 @@ def test_source_hashes_content(tmp_path):
     assert source_sha256(source) == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
 
 
-def test_save_roundtrips_canonical_rows_and_only_safe_metadata(tmp_path):
+@pytest.mark.parametrize("version", ["1", "2.1", "8.3.0+cpu", "0.25.0rc1"])
+def test_save_roundtrips_canonical_rows_and_only_safe_metadata(tmp_path, version):
     result = video_result(tmp_path)
+    result.video_metadata["provenance"]["models"]["player"]["version"] = version
     root = tmp_path / "runs"
     run = save_video_run(result, assignments={"track_7": TrackAssignment("home", "Alex")},
                          output_root=root)
@@ -52,7 +54,7 @@ def test_save_roundtrips_canonical_rows_and_only_safe_metadata(tmp_path):
     assert metadata["run_id"] == run.name
     assert metadata["home_attacks_positive_x"] is False
     assert metadata["provenance"] == {
-        "models": {"player": {"id": "yolo11n", "version": "1"},
+        "models": {"player": {"id": "yolo11n", "version": version},
                    "pitch": {"id": "pitch-keypoints", "version": "2.1"}},
         "packages": {"ultralytics": "8.3.0", "supervision": "0.25.0"},
     }
@@ -81,6 +83,8 @@ def test_failed_run_leaves_no_published_or_partial_directory(tmp_path, monkeypat
 @pytest.mark.parametrize("provenance", [
     {"models": {"player": {"id": "C:\\private\\weights.pt", "version": "1"}}, "packages": {}},
     {"models": {"player": {"id": "/private/weights.pt", "version": "1"}}, "packages": {}},
+    {"models": {"player": {"id": "weights.pt", "version": "1"}}, "packages": {}},
+    {"models": {}, "packages": {"weights.pt": "1.2.3"}},
     {"models": {"player": {"id": "yolo11n", "version": "../private"}}, "packages": {}},
     {"models": {"player": {"id": "yolo11n", "version": "1", "path": "private.pt"}}, "packages": {}},
     {"models": {}, "packages": {"ultralytics": {"version": "8.3.0", "path": "private"}}},

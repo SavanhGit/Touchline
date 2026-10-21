@@ -29,10 +29,17 @@ class RunProvenance(TypedDict):
     packages: dict[str, str]
 
 
-def _provenance_token(value: object) -> str:
-    # Names, IDs and versions are tokens, never local paths, URLs or free text.
+def _provenance_identifier(value: object) -> str:
+    # Dots are excluded so a weight/package filename cannot pass as an ID.
+    if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_@-]{0,127}", value):
+        raise ValueError("provenance names and IDs must be identifiers without dots or path separators")
+    return value
+
+
+def _provenance_version(value: object) -> str:
+    # Version tokens retain dots and local/build suffixes used by releases.
     if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.+@-]{0,127}", value):
-        raise ValueError("provenance names, IDs and versions must be non-path identifier tokens")
+        raise ValueError("provenance versions must be non-path version tokens")
     return value
 
 
@@ -46,12 +53,12 @@ def _safe_provenance(value: object) -> RunProvenance:
     for role, model in models.items():
         if not isinstance(model, dict) or set(model) != {"id", "version"}:
             raise ValueError("provenance models require only id and version")
-        safe_models[_provenance_token(role)] = ModelProvenance(
-            id=_provenance_token(model["id"]), version=_provenance_token(model["version"]),
+        safe_models[_provenance_identifier(role)] = ModelProvenance(
+            id=_provenance_identifier(model["id"]), version=_provenance_version(model["version"]),
         )
     return RunProvenance(
         models=safe_models,
-        packages={_provenance_token(name): _provenance_token(version)
+        packages={_provenance_identifier(name): _provenance_version(version)
                   for name, version in packages.items()},
     )
 
@@ -75,8 +82,9 @@ def save_video_run(
 
     The caller provides match_id, fps, home_attacks_positive_x and the source
     SHA-256 in video_metadata. Optional ``provenance`` follows RunProvenance;
-    names, IDs and versions must be 1-128 character non-path tokens starting
-    with an alphanumeric character, followed by alphanumerics or ``_.+@-``.
+    names and IDs must be 1-128 character tokens starting with an alphanumeric
+    character, followed by alphanumerics or ``_@-`` (no filename dots). Version
+    tokens additionally allow ``.+`` for ordinary dotted/build releases.
     Only explicitly allowed clip properties and validated provenance persist.
     """
     source = result.video_metadata
