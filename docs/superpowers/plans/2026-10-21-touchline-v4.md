@@ -81,11 +81,11 @@
 
 **Interfaces:** Add `sequence_summary`, `defensive_summary`, and `shot_summary` to context-bound Metrica tools only, each returning the report's allowed `citation_ids`. Preserve IDSSE’s existing origin-only tool contract. Dashboard match selection uses the current validated Metrica catalogue, and chat citations are restricted to active report evidence.
 
-- [ ] Add `test_dashboard_v4_sections_render_for_metrica`, `test_dashboard_v4_empty_summaries_are_explained`, and `test_idsse_stays_origin_only_after_v4`.
-- [ ] Add `test_chat_returns_cited_v4_report_facts`, `test_v4_chat_citations_follow_selected_match_and_team`, and `test_chat_abstains_on_causal_transition_question`.
-- [ ] Add views for possession/transition sequence evidence, defensive actions, and shot location/outcomes with sample counts and nearby limitations.
-- [ ] Expose the new report facts through local tools and validate all returned citations against the selected context.
-- [ ] Smoke-test both teams across Metrica Games 1–3; commit `feat: expose V4 analysis in dashboard and chat`.
+- [x] Add `test_dashboard_v4_sections_render_for_metrica`, `test_dashboard_v4_empty_summaries_are_explained`, and `test_idsse_stays_origin_only_after_v4`.
+- [x] Add `test_chat_returns_cited_v4_report_facts`, `test_v4_chat_citations_follow_selected_match_and_team`, and `test_chat_abstains_on_causal_transition_question`.
+- [x] Add views for possession/transition sequence evidence, defensive actions, and shot location/outcomes with sample counts and nearby limitations.
+- [x] Expose the new report facts through local tools and validate all returned citations against the selected context.
+- [x] Smoke-test both teams across Metrica Games 1–3; commit `feat: expose V4 analysis in dashboard and chat`.
 
 ### Task 5: Held-Out Validation and User Documentation
 
