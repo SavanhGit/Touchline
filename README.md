@@ -20,8 +20,9 @@ The [featured analysis](docs/demo/featured-analysis.md) examines game 1's anonym
 - **V1 — Complete (October 20, 2026):** the local Metrica-based analysis dashboard, evidence views and portfolio demo.
 - **V2 — Complete (October 21, 2026):** seven audited IDSSE matches in an origin-only catalogue; synchronization, attack direction, pass endpoints and IDSSE xT/progression remain deferred.
 - **V3 — Complete (October 21, 2026):** optional local question answering with Metrica report evidence and IDSSE origin-only citations.
-- **V4 — In progress:** observed possessions, clipped transitions, recognized defensive actions, and shot counts/outcomes. Held-out source validation is recorded separately from tactical-effect validation.
-- **Later:** derive tracking from recorded video, then work toward live analysis.
+- **V4 — Complete (October 21, 2026):** observed possessions, clipped transitions, recognized defensive actions, and shot counts/outcomes across Metrica Games 1–3. Held-out source validation is recorded separately from tactical-effect validation.
+- **V5 — In progress:** prototype tracking from recorded video and measure identity switches, missed players, pitch calibration, event extraction, and location error against reference data.
+- **V6 — Later:** work toward live analysis after the recorded-video pipeline is validated.
 
 See the [full roadmap](docs/ROADMAP.md) for scope and validation details.
 

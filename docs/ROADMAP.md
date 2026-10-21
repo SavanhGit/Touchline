@@ -31,9 +31,9 @@ Owner-machine acceptance used the real Metrica and IDSSE files and installed Qwe
 
 ## V4 — Richer tactical analysis
 
-**In progress (October 21, 2026).** Games 1–3 now support observed possession sequences, clipped 10-second transitions, explicitly recognized defensive actions, and attacking-channel shot counts/outcomes. V4 does not fit learned shot-quality models. See [V4 validation](VALIDATION.md#v4-held-out-validation-2026-10-21) and [held-out counts](validation/v4/cross-match-validation.json).
+**Completed: October 21, 2026.** Games 1–3 support observed possession sequences, clipped 10-second transitions, explicitly recognized defensive actions, and attacking-channel shot counts/outcomes. V4 does not fit learned shot-quality models. See [V4 validation](VALIDATION.md#v4-held-out-validation-2026-10-21) and [held-out counts](validation/v4/cross-match-validation.json).
 
-Source and descriptive audits are separate from tactical suggestion effectiveness. The six-selection dashboard AppTest smoke passed during Task 4; live V4 Ollama responses and human browser layout/evidence inspection are not yet verified at the final V4 revision. Keep V4 in progress until those owner acceptance gates are recorded; descriptive validation cannot establish that a suggested adjustment changes a result.
+The V4 release gate is complete. Source and descriptive audits remain separate from tactical suggestion effectiveness; validation cannot establish that a suggested adjustment changes a result. Local Ollama response time still depends on the selected model and hardware.
 
 ## V5 — Recorded video
 
