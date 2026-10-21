@@ -174,7 +174,7 @@ def test_evidence_fields_and_ids_are_reproducible_without_input_mutation():
     same_frame = first.passes.query("frame == 0").event_id.tolist()
     assert same_frame == ["test:1:0:0", "test:1:0:1", "test:1:0:2"]
     assert len(same_frame) == len(set(same_frame))
-    assert [m.event_id for m in first.findings[0].evidence] == same_frame
+    assert [m.event_id for m in next(f for f in first.findings if f.category == "buildup").evidence] == same_frame
     for before, after in snapshots:
         pd.testing.assert_frame_equal(before, after)
 
@@ -378,3 +378,144 @@ def test_real_scores_include_penalty_and_quality_is_usable():
         assert b.quality["conflicting_clocks"] == 0
         assert b.quality["alignment_median_m"] < 1
         assert b.quality["event_tracking_coverage"] > .98
+
+
+def v4_bundle():
+    b = bundle()
+    e = b.events.iloc[:8].copy()
+    e['event'] = ['pass', 'tackle', 'pass', 'shot', 'pass', 'interception', 'pass', 'shot']
+    e['team'] = ['away', 'home', 'home', 'home', 'home', 'away', 'away', 'away']
+    e['player_id'] = ['a', 'h', 'h', 'h', 'h', 'a', 'a', 'a']
+    e['success'] = [False, True, True, False, False, True, True, True]
+    e['x0'], e['x1'] = -20., 30.
+    e['y0'] = [-20., 0., 0., -20., 0., 0., 0., -20.]
+    return replace(b, events=e)
+
+
+def test_report_v4_summaries_match_hand_calculated_counts():
+    r = analyze_match(v4_bundle(), 'home', [bundle('train')])
+    assert len(r.possessions) == 4 and len(r.transitions) == 2
+    assert (r.possessions.passes.sum(), r.possessions.completed_passes.sum(), r.possessions.shots.sum(), r.possessions.goals.sum()) == (4, 2, 2, 1)
+    assert r.transitions.shots.tolist() == [1, 1]
+    assert r.transitions.final_third_entries.tolist() == [1, 0]
+    assert all(e.startswith('test:1:') for ids in r.transitions.event_ids for e in ids)
+
+
+def test_defensive_actions_per_90_use_observed_tracking_exposure():
+    b = v4_bundle()
+    r = analyze_match(replace(b, tracking=b.tracking[b.tracking.frame.isin([0, 1, 100, 101])]), 'home', [bundle('train')])
+    row = r.defensive_actions.query("team == 'home' and action_type == 'tackle'").iloc[0]
+    assert (row.total_actions, row.successful_outcomes, row.unsuccessful_outcomes) == (1, 1, 0)
+    assert row.observed_tracking_minutes == pytest.approx(4 / 60)
+    assert row.actions_per_90 == pytest.approx(1350)
+
+
+def test_shots_are_summarized_by_attacking_channel():
+    r = analyze_match(v4_bundle(), 'home', [bundle('train')])
+    h = r.shot_summaries.query("team == 'home' and channel == 'right'").iloc[0]
+    a = r.shot_summaries.query("team == 'away' and channel == 'left'").iloc[0]
+    assert (h.shots, h.goals, a.shots, a.goals) == (1, 0, 1, 1)
+    assert r.shot_summaries.shots.sum() == 2
+
+
+def pattern_bundle():
+    b = bundle()
+    rows = []
+    for i in range(5):
+        rows.extend([b.events.iloc[0].to_dict() | dict(team='away', player_id='a', success=False),
+                     b.events.iloc[0].to_dict() | dict(event='recovery', success=True),
+                     b.events.iloc[0].to_dict() | dict(event='tackle', success=False)])
+    rows.extend(b.events.iloc[0].to_dict() | dict(success=False) for _ in range(5))
+    rows.extend(b.events.iloc[10].to_dict() | dict(success=False) for _ in range(5))
+    e = pd.DataFrame(rows)
+    e['frame'] = np.arange(len(e))
+    e['time_s'] = e.frame.astype(float)
+    return replace(b, events=e)
+
+
+def test_findings_stay_capped_at_three_with_stable_ties():
+    r = analyze_match(pattern_bundle(), 'home', [bundle('train')])
+    assert [f.category for f in r.findings] == ['transition', 'defense', 'buildup']
+    assert [f.metrics['numerator'] for f in r.findings] == [5, 5, 5]
+    for f in r.findings:
+        assert f.metrics['denominator'] >= 5 and f.evidence and f.tradeoff
+        assert all((e.match_id, e.period, e.time_s) == ('test', 1, float(e.frame)) for e in f.evidence)
+
+
+def test_held_out_match_never_trains_its_xt_grid():
+    with pytest.raises(ValueError, match='held-out'):
+        analyze_match(bundle('metrica_3'), 'home', [bundle('metrica_1'), bundle('metrica_3')])
+
+
+@pytest.mark.parametrize('game', [1, 2, 3])
+def test_all_other_catalogued_metrica_matches_train_report(game):
+    from soccer_tactics.analytics.report import analyze_catalogued_metrica
+    from soccer_tactics.loaders.catalog import CatalogEntry
+    entries = [CatalogEntry('Metrica', f'metrica_{g}', '.', str(g), {}, True) for g in (1, 2, 3)]
+    entries += [CatalogEntry('Metrica', 'metrica_4', '.', 'unready', {}, False)]
+    loaded = []
+    def load(g):
+        loaded.append(g)
+        return bundle(f'metrica_{g}')
+    r = analyze_catalogued_metrica(game, 'home', entries, load)
+    assert loaded == [game] + [g for g in (1, 2, 3) if g != game]
+    assert r.provenance['training_match_ids'] == [f'metrica_{g}' for g in (1, 2, 3) if g != game]
+
+
+def test_unknown_score_and_empty_defense_are_explicit():
+    r = analyze_match(bundle(), 'home', [bundle('train')])
+    assert r.score is None and r.outcome == 'unknown'
+    assert len(r.defensive_actions) == 6 and r.defensive_actions.total_actions.eq(0).all()
+    assert any('no recognized defensive' in s.lower() for s in r.limitations)
+
+
+def test_low_shot_count_has_no_quality_claim():
+    r = analyze_match(v4_bundle(), 'home', [bundle('train')])
+    assert r.shot_summaries.shots.sum() == 2
+    assert any('shot quality' in s.lower() and 'not' in s.lower() for s in r.limitations)
+    assert not any(f.category == 'danger' for f in r.findings)
+
+
+def test_insufficient_pattern_evidence_returns_fewer_findings():
+    r = analyze_match(v4_bundle(), 'home', [bundle('train')])
+    assert r.findings == []
+    assert not r.possessions.empty and not r.transitions.empty
+    assert not r.defensive_actions.empty and not r.shot_summaries.empty
+
+
+def test_v4_summary_references_resolve_without_qualifying_findings():
+    b = v4_bundle()
+    r = analyze_match(b, 'home', [bundle('train')])
+    assert r.findings == []
+    assert [e.event_id for e in r.event_evidence] == [f'test:1:{i}:{i}' for i in range(8)]
+    evidence = {e.event_id: e for e in r.event_evidence}
+    for table in (r.possessions, r.transitions, r.defensive_actions, r.shot_summaries):
+        for ids in table.event_ids:
+            for eid in ids:
+                e = evidence[eid]
+                source = b.events.iloc[int(eid.rsplit(':', 1)[1])]
+                assert (e.match_id, e.period, e.frame, e.time_s, e.event) == ('test', 1, source.frame, source.time_s, source.event)
+
+
+@pytest.mark.parametrize('count,qualifies', [(4, False), (5, True)])
+def test_transition_and_defense_findings_require_denominators(count, qualifies):
+    b = pattern_bundle()
+    # Each recovery+failed tackle is one transition with no entry/shot;
+    # successful recoveries are excluded here from the defense denominator
+    # by replacing them with a successful pass. Opponent turnovers still trigger.
+    e = b.events.iloc[:count * 3].copy()
+    e.loc[e.event == 'recovery', 'event'] = 'pass'
+    e.loc[e.event == 'pass', 'x0'] = 20.
+    r = analyze_match(replace(b, events=e), 'home', [bundle('train')])
+    categories = {f.category for f in r.findings}
+    assert ('transition' in categories) is qualifies
+    assert ('defense' in categories) is qualifies
+
+
+def test_support_count_precedes_category_tie_order():
+    b = pattern_bundle()
+    extra = b.events.iloc[-1:].assign(event='tackle', team='home', success=False)
+    extra['frame'], extra['time_s'] = 25, 25.
+    r = analyze_match(replace(b, events=pd.concat([b.events, extra], ignore_index=True)), 'home', [bundle('train')])
+    assert [f.category for f in r.findings] == ['defense', 'transition', 'buildup']
+    assert [f.metrics['numerator'] for f in r.findings] == [6, 5, 5]

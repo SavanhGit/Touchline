@@ -105,10 +105,15 @@ def _report_evidence(report: MatchReport) -> dict[str, Any]:
             if (str(row["match_id"]) == str(report.match_id) and row["team"] == report.team
                     and citation_id not in rows):
                 rows[citation_id] = {key: row[key] for key in fields if key in row}
+    for evidence in report.event_evidence:
+        if str(evidence.match_id) == str(report.match_id) and evidence.team == report.team:
+            rows[str(evidence.event_id)] = evidence
     return rows
 
 
 def _json_value(value: Any) -> Any:
+    if hasattr(value, "__dataclass_fields__"):
+        value = vars(value)
     if isinstance(value, dict):
         return {str(k): _json_value(v) for k, v in value.items()}
     if isinstance(value, (list, tuple)):
@@ -148,6 +153,9 @@ _METRICA_SPECS = [
     _spec("evidence_lookup", "Look up one cited event from the selected team's report.", {
         "citation_id": {"type": "string"},
     }, ["citation_id"]),
+    _spec("sequence_summary", "Read observed possessions and transitions within 10 seconds; no causation.", {}),
+    _spec("defensive_summary", "Read recognized defensive actions and observed-exposure rates.", {}),
+    _spec("shot_summary", "Read shot locations and outcomes by attacking channel; no shot quality estimate.", {}),
 ]
 _IDSSE_SPECS = [
     _spec("origin_lookup", "Look up factual source event origins for the selected team.", {
@@ -200,6 +208,8 @@ def call_tool(context: AnalysisContext, name: str, arguments: Mapping[str, Any])
     args = _validate_args(name, arguments, tool_specs(context))
     if context.is_idsse:
         return _origin_lookup(context, args)
+    if name in {"sequence_summary", "defensive_summary", "shot_summary"}:
+        return _v4_summary(context, name)
     if name == "match_summary":
         report = context.report
         return _json_value({
@@ -296,3 +306,42 @@ def _origin_lookup(context: AnalysisContext, args: dict) -> dict:
         item["citation_id"] = citation_id
         output.append(_json_value(item))
     return {"origins": output, "citation_ids": [row["citation_id"] for row in output]}
+
+
+V4_LIMITATIONS = {
+    "sequence_summary": "Observed event sequences only, without inferred carries. Transitions stop at possession end, period end, or 10 seconds; they do not establish that a turnover caused a shot.",
+    "defensive_summary": "Only explicitly recognized source defensive actions are counted. Rates use observed tracking minutes, not full-match exposure; missing or ambiguous actions are excluded.",
+    "shot_summary": "Raw modeling-shot and goal counts in the team's attacking direction; penalties are excluded. Sparse samples do not establish shot quality or statistical significance; no learned shot-quality estimate is fitted.",
+}
+
+
+def _v4_summary(context: AnalysisContext, name: str) -> dict:
+    fields = {"sequence_summary": ("possessions", "transitions"),
+              "defensive_summary": ("defensive_actions",),
+              "shot_summary": ("shot_summaries",)}[name]
+    allowed = set(_unique_citations(context))
+    output = {"match_id": context.match_id, "team": context.selected_team,
+              "limitations": [V4_LIMITATIONS[name]], "sample_counts": {}}
+    citations = []
+    for field in fields:
+        frame = getattr(context.report, field)
+        rows = frame[frame.team == context.selected_team] if "team" in frame else frame.iloc[:0]
+        if "match_id" in rows:
+            rows = rows[rows.match_id.astype(str) == str(context.match_id)]
+        records = []
+        for row in rows.to_dict("records"):
+            row.pop("evidence", None)
+            ids = [str(cid) for cid in row.get("event_ids", []) if str(cid) in allowed]
+            row["event_ids"] = ids
+            for key in ("start_event_id", "end_event_id", "source_turnover_event_id"):
+                if key in row and str(row[key]) not in allowed:
+                    row[key] = None
+                elif key in row:
+                    citations.append(str(row[key]))
+            citations.extend(ids)
+            records.append(row)
+        output[field] = records
+        count_column = {"defensive_actions": "total_actions", "shot_summaries": "shots"}.get(field)
+        output["sample_counts"][field] = int(rows[count_column].sum()) if count_column and count_column in rows else len(rows)
+    output["citation_ids"] = list(dict.fromkeys(citations))
+    return _json_value(output)

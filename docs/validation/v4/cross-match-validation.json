@@ -1,0 +1,434 @@
+[
+  {
+    "match_id": "metrica_1",
+    "team": "home",
+    "baseline_match_ids": [
+      "metrica_2",
+      "metrica_3"
+    ],
+    "baseline_label": "Cross-match dataset baseline: pooled anonymous teams in the other matches; not the same team",
+    "transition_shot_rate": {
+      "numerator": 5,
+      "denominator": 100,
+      "rate": 0.05
+    },
+    "possession_shot_rate": {
+      "numerator": 18,
+      "denominator": 202,
+      "rate": 0.0891089108910891
+    },
+    "defense": [
+      {
+        "action_type": "interception",
+        "total_actions": 72,
+        "observed_tracking_minutes": 96.67066666666666,
+        "actions_per_90": 67.03170903272968,
+        "baseline_actions": 272,
+        "baseline_observed_team_minutes": 379.88933333333335,
+        "dataset_baseline_per_90": 64.43981931580073
+      },
+      {
+        "action_type": "recovery",
+        "total_actions": 12,
+        "observed_tracking_minutes": 96.67066666666666,
+        "actions_per_90": 11.171951505454947,
+        "baseline_actions": 57,
+        "baseline_observed_team_minutes": 379.88933333333335,
+        "dataset_baseline_per_90": 13.503932724267067
+      },
+      {
+        "action_type": "tackle",
+        "total_actions": 33,
+        "observed_tracking_minutes": 96.67066666666666,
+        "actions_per_90": 30.722866640001104,
+        "baseline_actions": 160,
+        "baseline_observed_team_minutes": 379.88933333333335,
+        "dataset_baseline_per_90": 37.90577606811808
+      }
+    ],
+    "shots_by_channel": [
+      {
+        "channel": "right",
+        "shots": 4,
+        "goals": 1,
+        "team_shots": 18,
+        "team_goals": 3
+      },
+      {
+        "channel": "centre",
+        "shots": 13,
+        "goals": 2,
+        "team_shots": 18,
+        "team_goals": 3
+      },
+      {
+        "channel": "left",
+        "shots": 1,
+        "goals": 0,
+        "team_shots": 18,
+        "team_goals": 3
+      }
+    ],
+    "interpretation": "Descriptive counts only; no significance, causal effect, or learned shot-quality estimate."
+  },
+  {
+    "match_id": "metrica_1",
+    "team": "away",
+    "baseline_match_ids": [
+      "metrica_2",
+      "metrica_3"
+    ],
+    "baseline_label": "Cross-match dataset baseline: pooled anonymous teams in the other matches; not the same team",
+    "transition_shot_rate": {
+      "numerator": 0,
+      "denominator": 103,
+      "rate": 0.0
+    },
+    "possession_shot_rate": {
+      "numerator": 6,
+      "denominator": 197,
+      "rate": 0.030456852791878174
+    },
+    "defense": [
+      {
+        "action_type": "interception",
+        "total_actions": 90,
+        "observed_tracking_minutes": 96.67066666666666,
+        "actions_per_90": 83.7896362909121,
+        "baseline_actions": 272,
+        "baseline_observed_team_minutes": 379.88933333333335,
+        "dataset_baseline_per_90": 64.43981931580073
+      },
+      {
+        "action_type": "recovery",
+        "total_actions": 11,
+        "observed_tracking_minutes": 96.67066666666666,
+        "actions_per_90": 10.240955546667035,
+        "baseline_actions": 57,
+        "baseline_observed_team_minutes": 379.88933333333335,
+        "dataset_baseline_per_90": 13.503932724267067
+      },
+      {
+        "action_type": "tackle",
+        "total_actions": 33,
+        "observed_tracking_minutes": 96.67066666666666,
+        "actions_per_90": 30.722866640001104,
+        "baseline_actions": 160,
+        "baseline_observed_team_minutes": 379.88933333333335,
+        "dataset_baseline_per_90": 37.90577606811808
+      }
+    ],
+    "shots_by_channel": [
+      {
+        "channel": "right",
+        "shots": 1,
+        "goals": 0,
+        "team_shots": 6,
+        "team_goals": 0
+      },
+      {
+        "channel": "centre",
+        "shots": 4,
+        "goals": 0,
+        "team_shots": 6,
+        "team_goals": 0
+      },
+      {
+        "channel": "left",
+        "shots": 1,
+        "goals": 0,
+        "team_shots": 6,
+        "team_goals": 0
+      }
+    ],
+    "interpretation": "Descriptive counts only; no significance, causal effect, or learned shot-quality estimate."
+  },
+  {
+    "match_id": "metrica_2",
+    "team": "home",
+    "baseline_match_ids": [
+      "metrica_1",
+      "metrica_3"
+    ],
+    "baseline_label": "Cross-match dataset baseline: pooled anonymous teams in the other matches; not the same team",
+    "transition_shot_rate": {
+      "numerator": 4,
+      "denominator": 89,
+      "rate": 0.0449438202247191
+    },
+    "possession_shot_rate": {
+      "numerator": 13,
+      "denominator": 197,
+      "rate": 0.06598984771573604
+    },
+    "defense": [
+      {
+        "action_type": "interception",
+        "total_actions": 74,
+        "observed_tracking_minutes": 94.104,
+        "actions_per_90": 70.77276205049732,
+        "baseline_actions": 289,
+        "baseline_observed_team_minutes": 385.0226666666667,
+        "dataset_baseline_per_90": 67.55446432590982
+      },
+      {
+        "action_type": "recovery",
+        "total_actions": 21,
+        "observed_tracking_minutes": 94.104,
+        "actions_per_90": 20.08416220351951,
+        "baseline_actions": 49,
+        "baseline_observed_team_minutes": 385.0226666666667,
+        "dataset_baseline_per_90": 11.453871114081595
+      },
+      {
+        "action_type": "tackle",
+        "total_actions": 37,
+        "observed_tracking_minutes": 94.104,
+        "actions_per_90": 35.38638102524866,
+        "baseline_actions": 138,
+        "baseline_observed_team_minutes": 385.0226666666667,
+        "dataset_baseline_per_90": 32.25784109680123
+      }
+    ],
+    "shots_by_channel": [
+      {
+        "channel": "right",
+        "shots": 2,
+        "goals": 0,
+        "team_shots": 13,
+        "team_goals": 3
+      },
+      {
+        "channel": "centre",
+        "shots": 9,
+        "goals": 3,
+        "team_shots": 13,
+        "team_goals": 3
+      },
+      {
+        "channel": "left",
+        "shots": 2,
+        "goals": 0,
+        "team_shots": 13,
+        "team_goals": 3
+      }
+    ],
+    "interpretation": "Descriptive counts only; no significance, causal effect, or learned shot-quality estimate."
+  },
+  {
+    "match_id": "metrica_2",
+    "team": "away",
+    "baseline_match_ids": [
+      "metrica_1",
+      "metrica_3"
+    ],
+    "baseline_label": "Cross-match dataset baseline: pooled anonymous teams in the other matches; not the same team",
+    "transition_shot_rate": {
+      "numerator": 5,
+      "denominator": 91,
+      "rate": 0.054945054945054944
+    },
+    "possession_shot_rate": {
+      "numerator": 10,
+      "denominator": 188,
+      "rate": 0.05319148936170213
+    },
+    "defense": [
+      {
+        "action_type": "interception",
+        "total_actions": 71,
+        "observed_tracking_minutes": 94.104,
+        "actions_per_90": 67.90359602142311,
+        "baseline_actions": 289,
+        "baseline_observed_team_minutes": 385.0226666666667,
+        "dataset_baseline_per_90": 67.55446432590982
+      },
+      {
+        "action_type": "recovery",
+        "total_actions": 10,
+        "observed_tracking_minutes": 94.104,
+        "actions_per_90": 9.563886763580719,
+        "baseline_actions": 49,
+        "baseline_observed_team_minutes": 385.0226666666667,
+        "dataset_baseline_per_90": 11.453871114081595
+      },
+      {
+        "action_type": "tackle",
+        "total_actions": 51,
+        "observed_tracking_minutes": 94.104,
+        "actions_per_90": 48.77582249426167,
+        "baseline_actions": 138,
+        "baseline_observed_team_minutes": 385.0226666666667,
+        "dataset_baseline_per_90": 32.25784109680123
+      }
+    ],
+    "shots_by_channel": [
+      {
+        "channel": "right",
+        "shots": 1,
+        "goals": 0,
+        "team_shots": 10,
+        "team_goals": 1
+      },
+      {
+        "channel": "centre",
+        "shots": 9,
+        "goals": 1,
+        "team_shots": 10,
+        "team_goals": 1
+      },
+      {
+        "channel": "left",
+        "shots": 0,
+        "goals": 0,
+        "team_shots": 10,
+        "team_goals": 1
+      }
+    ],
+    "interpretation": "Descriptive counts only; no significance, causal effect, or learned shot-quality estimate."
+  },
+  {
+    "match_id": "metrica_3",
+    "team": "home",
+    "baseline_match_ids": [
+      "metrica_1",
+      "metrica_2"
+    ],
+    "baseline_label": "Cross-match dataset baseline: pooled anonymous teams in the other matches; not the same team",
+    "transition_shot_rate": {
+      "numerator": 4,
+      "denominator": 116,
+      "rate": 0.034482758620689655
+    },
+    "possession_shot_rate": {
+      "numerator": 9,
+      "denominator": 211,
+      "rate": 0.04265402843601896
+    },
+    "defense": [
+      {
+        "action_type": "interception",
+        "total_actions": 50,
+        "observed_tracking_minutes": 95.84066666666666,
+        "actions_per_90": 46.95292881935991,
+        "baseline_actions": 307,
+        "baseline_observed_team_minutes": 381.5493333333333,
+        "dataset_baseline_per_90": 72.41527526366184
+      },
+      {
+        "action_type": "recovery",
+        "total_actions": 7,
+        "observed_tracking_minutes": 95.84066666666666,
+        "actions_per_90": 6.573410034710387,
+        "baseline_actions": 54,
+        "baseline_observed_team_minutes": 381.5493333333333,
+        "dataset_baseline_per_90": 12.737540274390032
+      },
+      {
+        "action_type": "tackle",
+        "total_actions": 35,
+        "observed_tracking_minutes": 95.84066666666666,
+        "actions_per_90": 32.86705017355194,
+        "baseline_actions": 154,
+        "baseline_observed_team_minutes": 381.5493333333333,
+        "dataset_baseline_per_90": 36.325577819556756
+      }
+    ],
+    "shots_by_channel": [
+      {
+        "channel": "right",
+        "shots": 3,
+        "goals": 0,
+        "team_shots": 9,
+        "team_goals": 0
+      },
+      {
+        "channel": "centre",
+        "shots": 6,
+        "goals": 0,
+        "team_shots": 9,
+        "team_goals": 0
+      },
+      {
+        "channel": "left",
+        "shots": 0,
+        "goals": 0,
+        "team_shots": 9,
+        "team_goals": 0
+      }
+    ],
+    "interpretation": "Descriptive counts only; no significance, causal effect, or learned shot-quality estimate."
+  },
+  {
+    "match_id": "metrica_3",
+    "team": "away",
+    "baseline_match_ids": [
+      "metrica_1",
+      "metrica_2"
+    ],
+    "baseline_label": "Cross-match dataset baseline: pooled anonymous teams in the other matches; not the same team",
+    "transition_shot_rate": {
+      "numerator": 4,
+      "denominator": 119,
+      "rate": 0.03361344537815126
+    },
+    "possession_shot_rate": {
+      "numerator": 11,
+      "denominator": 217,
+      "rate": 0.05069124423963134
+    },
+    "defense": [
+      {
+        "action_type": "interception",
+        "total_actions": 77,
+        "observed_tracking_minutes": 95.84066666666666,
+        "actions_per_90": 72.30751038181427,
+        "baseline_actions": 307,
+        "baseline_observed_team_minutes": 381.5493333333333,
+        "dataset_baseline_per_90": 72.41527526366184
+      },
+      {
+        "action_type": "recovery",
+        "total_actions": 19,
+        "observed_tracking_minutes": 95.84066666666666,
+        "actions_per_90": 17.842112951356768,
+        "baseline_actions": 54,
+        "baseline_observed_team_minutes": 381.5493333333333,
+        "dataset_baseline_per_90": 12.737540274390032
+      },
+      {
+        "action_type": "tackle",
+        "total_actions": 37,
+        "observed_tracking_minutes": 95.84066666666666,
+        "actions_per_90": 34.74516732632633,
+        "baseline_actions": 154,
+        "baseline_observed_team_minutes": 381.5493333333333,
+        "dataset_baseline_per_90": 36.325577819556756
+      }
+    ],
+    "shots_by_channel": [
+      {
+        "channel": "right",
+        "shots": 2,
+        "goals": 0,
+        "team_shots": 11,
+        "team_goals": 2
+      },
+      {
+        "channel": "centre",
+        "shots": 6,
+        "goals": 2,
+        "team_shots": 11,
+        "team_goals": 2
+      },
+      {
+        "channel": "left",
+        "shots": 3,
+        "goals": 0,
+        "team_shots": 11,
+        "team_goals": 2
+      }
+    ],
+    "interpretation": "Descriptive counts only; no significance, causal effect, or learned shot-quality estimate."
+  }
+]

@@ -1,10 +1,11 @@
 """Deterministic match explanations with source-addressable evidence."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from collections.abc import Iterable
 
 import numpy as np
 import pandas as pd
 
+from soccer_tactics.analytics.sequences import segment_possessions, summarize_transitions, DEFENSE
 from soccer_tactics.analytics.impact import pass_values, player_impact
 from soccer_tactics.analytics.xt import attacking, fit_xt
 from soccer_tactics.match import MatchBundle, validate_bundle
@@ -13,10 +14,12 @@ from soccer_tactics.schema import validate_events
 CHANNELS = ("right", "centre", "left")  # y increases toward the attacking team's left
 LIMITATIONS = [
     "These are patterns that may have contributed, not a causal explanation of the result.",
-    "Progression counts passes only: carries, dribbles and complete possessions are unavailable.",
+    "Progression counts passes only: carries and dribbles are unavailable; possessions contain observed events only.",
     "Single-match player rankings are noisy; impact credits passes only and goalkeeper roles are inferred.",
     "Pitch coordinates use a nominal 105 x 68 m field. Pitch control ignores ball flight and acceleration.",
     "Modeling shots exclude penalties; the score and goal timeline include them.",
+    "Shot counts and outcomes do not estimate shot quality; small samples limit comparisons.",
+    "Only three public Metrica matches are available; descriptive patterns do not establish significance.",
     "Five-event denominators and three supporting events are display safeguards, not significance tests.",
 ]
 
@@ -66,6 +69,11 @@ class MatchReport:
     findings: list[Finding]
     provenance: dict
     limitations: list[str]
+    possessions: pd.DataFrame = field(default_factory=pd.DataFrame)
+    transitions: pd.DataFrame = field(default_factory=pd.DataFrame)
+    defensive_actions: pd.DataFrame = field(default_factory=pd.DataFrame)
+    shot_summaries: pd.DataFrame = field(default_factory=pd.DataFrame)
+    event_evidence: list[Evidence] = field(default_factory=list)
 
 
 @dataclass
@@ -81,7 +89,7 @@ def channel(y) -> np.ndarray:
 
 
 def _evidence(rows: pd.DataFrame, metric: str | None = None) -> list[Evidence]:
-    ordered = rows.sort_values([metric, "period", "frame"], ascending=[False, True, True]) if metric else rows.sort_values(["period", "frame"])
+    ordered = rows.sort_values([metric, "period", "frame"], ascending=[False, True, True]) if metric else rows.sort_values(["period", "frame"], kind="stable")
     if metric:
         selected = ordered.head(3)
     else:
@@ -158,6 +166,29 @@ def analyze_match(match_bundle: MatchBundle, team: str,
                 "pass_value_added": float(pc.xt_added.sum()),
                 "shots": int((channel(sh.y0) == name).sum()),
             })
+    possessions = segment_possessions(events, passes)
+    transitions = summarize_transitions(events, possessions, passes)
+    defensive_rows, shot_rows = [], []
+    for side in ("home", "away"):
+        # Count observed team frames once, irrespective of player count or clock gaps.
+        observed = bundle.tracking[bundle.tracking.team == side]
+        minutes = len(observed.drop_duplicates(["match_id", "period", "frame"])) / bundle.fps / 60
+        for action in sorted(DEFENSE):
+            rows = events[(events.team == side) & (events.event == action)]
+            successful = int(rows.success.astype(bool).sum())
+            defensive_rows.append(dict(team=side, action_type=action, total_actions=len(rows),
+                successful_outcomes=successful, unsuccessful_outcomes=len(rows)-successful,
+                observed_tracking_minutes=minutes, actions_per_90=len(rows)*90/minutes if minutes else None,
+                event_ids=rows.event_id.tolist(), evidence=_evidence(rows)))
+        shots = events[(events.team == side) & (events.event == "shot")].copy()
+        shots["channel"] = channel(attacking(shots).y0)
+        for name in CHANNELS:
+            rows = shots[shots.channel == name]
+            shot_rows.append(dict(team=side, channel=name, shots=len(rows),
+                goals=int(rows.success.astype(bool).sum()), event_ids=rows.event_id.tolist(),
+                evidence=_evidence(rows)))
+    defensive_actions = pd.DataFrame(defensive_rows)
+    shot_summaries = pd.DataFrame(shot_rows)
     channels = pd.DataFrame(channels)
     own = passes[passes.team == team]
     own_channels = channels[channels.team == team]
@@ -211,6 +242,31 @@ def analyze_match(match_bundle: MatchBundle, team: str,
             _evidence(rows[rows.channel == name], "success" if label == "shots" else None),
         ))
         break
+    own_transitions = transitions[transitions.team == team]
+    stalled = own_transitions[(own_transitions.final_third_entries == 0) & (own_transitions.shots == 0)]
+    if len(own_transitions) >= 5 and len(stalled) >= 3:
+        # Cite the first observed moment of each supporting transition.
+        starts = {event_ids[0] for event_ids in stalled.event_ids}
+        findings.append(Finding("transition", "Transitions without a direct entry or shot",
+            f"{len(stalled)} of {len(own_transitions)} observed transitions had no completed final-third entry or shot within the clipped 10-second window.",
+            "Review forward support at these transition starts as a tactical hypothesis.",
+            "Sending support forward can reduce cover after another turnover; these observations do not establish causality.",
+            {"numerator": len(stalled), "denominator": len(own_transitions)},
+            _evidence(events[events.event_id.isin(starts)])))
+    actions = events[(events.team == team) & events.event.isin(DEFENSE)]
+    failed = actions[~actions.success.astype(bool)]
+    if len(actions) >= 5 and len(failed) >= 3:
+        findings.append(Finding("defense", "Unsuccessful observed defensive actions",
+            f"{len(failed)} of {len(actions)} recognized defensive actions had unsuccessful source outcomes. Other defensive work is outside this sample.",
+            "Investigate closer cover around these defensive attempts as a tactical hypothesis.",
+            "Closer cover can concede space elsewhere; action outcomes alone do not identify an individual error or establish causality.",
+            {"numerator": len(failed), "denominator": len(actions)}, _evidence(failed)))
+    order = {name: i for i, name in enumerate(("transition", "defense", "buildup", "progression", "danger"))}
+    findings.sort(key=lambda f: (-f.metrics["numerator"], order[f.category]))
+    findings = findings[:3]
+    limitations = LIMITATIONS.copy()
+    if actions.empty:
+        limitations.append("No recognized defensive actions are observed for the selected team; zero counts do not mean no defensive work occurred.")
     score = bundle.score
     outcome = "unknown" if score is None else "win" if score[team] > score[opponent] else "loss" if score[team] < score[opponent] else "draw"
     return MatchReport(
@@ -218,5 +274,21 @@ def analyze_match(match_bundle: MatchBundle, team: str,
         channels, players[players.team == team].copy(), passes, findings,
         {"source": bundle.source, "training_match_ids": training_match_ids,
          "fps": bundle.fps, "quality": bundle.quality, "xt_grid": grid.tolist()},
-        LIMITATIONS.copy(),
+        limitations, possessions, transitions, defensive_actions, shot_summaries,
+        [Evidence(**{key: row[key] for key in Evidence.__dataclass_fields__})
+         for row in events.to_dict("records")],
     )
+
+
+def analyze_catalogued_metrica(game: int, team: str, catalogue, load_bundle) -> MatchReport:
+    """Train on every other ready Metrica match, never the selected match.
+
+    The caller owns local loading/caching; unready and other-provider entries
+    cannot enter the calibration set.
+    """
+    selected = load_bundle(game)
+    ids = sorted({entry.match_id for entry in catalogue
+                  if entry.provider == "Metrica" and entry.ready
+                  and entry.match_id != selected.match_id})
+    training = [load_bundle(int(mid.removeprefix("metrica_"))) for mid in ids]
+    return analyze_match(selected, team, training)

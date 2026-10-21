@@ -14,7 +14,7 @@ def events(request, games):
 
 def test_schema(events):
     assert list(events.columns) == EVENT_COLUMNS
-    assert set(events["event"]) == {"pass", "shot"}
+    assert {"pass", "shot", "tackle", "interception", "recovery"} == set(events["event"])
 
 
 def test_failed_passes_are_present_and_rarer_than_completed(events):

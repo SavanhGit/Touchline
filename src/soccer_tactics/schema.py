@@ -72,7 +72,7 @@ def orient(df: pd.DataFrame) -> pd.DataFrame:
 
 # Canonical endpoint events used by Metrica analytics. IDSSE source origin rows
 # stay outside this table because their endpoints and attack direction are unknown.
-# `success` means a completed pass, or a goal.
+# `success` means a completed pass, goal, won tackle, interception, or theft recovery.
 EVENT_COLUMNS = [
     "match_id", "period", "team", "event", "success", "player_id", "receiver_id",
     "frame", "time_s", "x0", "y0", "x1", "y1",

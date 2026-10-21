@@ -31,7 +31,7 @@ def _context(team="home", match_id="m1"):
 def test_metrica_specs_and_tools_are_context_bound_and_cited():
     context = _context()
     names = {spec["name"] for spec in tool_specs(context)}
-    assert names == {"match_summary", "team_findings", "player_metrics", "evidence_lookup"}
+    assert names == {"match_summary", "team_findings", "player_metrics", "evidence_lookup", "sequence_summary", "defensive_summary", "shot_summary"}
     summary = call_tool(context, "match_summary", {})
     assert summary["match_id"] == "m1"
     assert summary["citation_ids"] == ["m1:1:12:0"]
@@ -114,3 +114,34 @@ def test_source_contract_rejects_mixed_match_rows_and_invalid_arguments():
         AnalysisContext(source="IDSSE", match_id="i1", selected_team="home", report=None,
                        event_origins=origins, team_names={}, limitations=(),
                        allowed_citation_ids=())
+
+
+def test_v4_summaries_are_context_bound_without_findings():
+    from factories import make_bundle
+    from soccer_tactics.analytics.report import analyze_match
+    from soccer_tactics.dashboard.chat import build_metrica_context, citation_description
+    bundle = make_bundle("one")
+    bundle.events.loc[bundle.events.index[-2:], "team"] = "home"
+    bundle.events.loc[bundle.events.index[-2], "event"] = "tackle"
+    report = analyze_match(bundle, "home", [make_bundle("training")])
+    report.findings.clear()
+    context = build_metrica_context(report)
+    for name, field in [("sequence_summary", "possessions"), ("defensive_summary", "defensive_actions"), ("shot_summary", "shot_summaries")]:
+        result = call_tool(context, name, {})
+        assert result["match_id"] == "one" and result["team"] == "home"
+        assert all(row["team"] == "home" for row in result[field])
+        assert result["citation_ids"]
+        assert set(result["citation_ids"]) <= set(context.allowed_citation_ids)
+        for cid in result["citation_ids"]:
+            assert call_tool(context, "evidence_lookup", {"citation_id": cid})["evidence"]["match_id"] == "one"
+            assert citation_description(context, cid)
+    assert call_tool(context, "sequence_summary", {})["sample_counts"]["possessions"] == len(report.possessions[report.possessions.team == "home"])
+
+
+def test_idsse_stays_origin_only_after_v4():
+    origins = pd.DataFrame([{"match_id": "i1", "team": "home", "origin_id": "IDSSE:i1:000001"}])
+    context = AnalysisContext("IDSSE", "i1", "home", event_origins=origins,
+                              allowed_citation_ids=("IDSSE:i1:000001",))
+    for name in ("sequence_summary", "defensive_summary", "shot_summary"):
+        with pytest.raises(KeyError):
+            call_tool(context, name, {})

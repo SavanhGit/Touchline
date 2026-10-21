@@ -1,4 +1,4 @@
-"""Metrica Sports sample data (games 1-2, CSV format) -> canonical tracking and event schemas.
+"""Local Metrica sample data (games 1-2 CSV; Game 3 EPTS/JSON) -> canonical schemas.
 
 Source files hold normalized coordinates (0-1, origin top-left, y down). Tracking is one wide
 row per frame with an x/y column pair per player; the ball is in both team files and we keep
@@ -6,6 +6,7 @@ the home copy.
 """
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from soccer_tactics.schema import (
@@ -72,7 +73,7 @@ _NOT_A_PASS = "THEFT|FORCED|HAND BALL|OFFSIDE|REFEREE|WOODWORK|END HALF"
 
 
 def _load_events_raw(d: Path, game: int, length: float, width: float) -> pd.DataFrame:
-    """Passes and shots, un-oriented. Metrica logs every PASS as completed (the receiver is a
+    """Passes, shots and explicitly recognized defensive events, un-oriented. Metrica logs every PASS as completed (the receiver is a
     teammate); a failed pass is a later BALL LOST row from the intended receiver's side with
     the interception point as its end. Penalties are dropped: they would skew shot conversion."""
     path = d / f"Sample_Game_{game}_RawEventsData.csv"
@@ -85,22 +86,37 @@ def _load_events_raw(d: Path, game: int, length: float, width: float) -> pd.Data
             f"Invalid Metrica event header in {path}; missing columns: {', '.join(sorted(missing))}. "
             "Download or restore the complete source CSV from Metrica Sports sample-data."
         )
-    sub = e["Subtype"].fillna("")
+    return _canonical_events(e, game, length, width)
+
+
+def _canonical_events(e: pd.DataFrame, game: int, length: float, width: float) -> pd.DataFrame:
+    sub = e["Subtype"].fillna("").astype("string")
     after_penalty = (e["Type"].shift(1) == "SET PIECE") & (e["Subtype"].shift(1) == "PENALTY")
     done = e["Type"] == "PASS"
     lost = (e["Type"] == "BALL LOST") & e["End X"].notna() & ~sub.str.contains(_NOT_A_PASS)
     shot = (e["Type"] == "SHOT") & ~after_penalty
 
-    e = e[done | lost | shot]
+    mapping = {("CHALLENGE", "TACKLE-WON"): ("tackle", True),
+               ("CHALLENGE", "TACKLE-LOST"): ("tackle", False),
+               ("RECOVERY", "INTERCEPTION"): ("interception", True),
+               ("RECOVERY", "THEFT"): ("recovery", True)}
+    defensive = pd.Series([mapping.get(pair) for pair in zip(e["Type"], sub)], index=e.index)
+    excluded = e["Type"].isin(["CHALLENGE", "RECOVERY"]) & defensive.isna()
+    reasons = (e.loc[excluded, "Type"] + "/" + sub[excluded].replace("", "<blank>"))
+    counts = {key: int(value) for key, value in reasons.value_counts().items()}
+    e = e[done | lost | shot | defensive.notna()]
+    defensive = defensive.loc[e.index]
     out = pd.DataFrame({
         "match_id": f"metrica_{game}",
         "period": e["Period"],
         "team": e["Team"].str.lower(),
-        "event": e["Type"].map(lambda t: "shot" if t == "SHOT" else "pass"),
+        "event": [item[0] if item else ("shot" if kind == "SHOT" else "pass")
+                  for kind, item in zip(e["Type"], defensive)],
         # a goal is a SHOT subtype ending in GOAL; "GOAL KICK" passes must not match
-        "success": (e["Type"] == "PASS") | ((e["Type"] == "SHOT") & e["Subtype"].fillna("").str.contains("GOAL")),
-        "player_id": e["From"].str.replace(" ", ""),
-        "receiver_id": e["To"].where(e["Type"] == "PASS").str.replace(" ", ""),
+        "success": [item[1] if item else bool(kind == "PASS" or (kind == "SHOT" and "GOAL" in subtype))
+                    for kind, subtype, item in zip(e["Type"], sub.loc[e.index], defensive)],
+        "player_id": e["From"].astype("string").str.replace(" ", ""),
+        "receiver_id": e["To"].where(e["Type"] == "PASS").astype("string").str.replace(" ", ""),
         "frame": e["Start Frame"],
         "time_s": e["Start Time [s]"],
         "x0": (e["Start X"] - 0.5) * length,
@@ -108,7 +124,9 @@ def _load_events_raw(d: Path, game: int, length: float, width: float) -> pd.Data
         "x1": (e["End X"] - 0.5) * length,
         "y1": (0.5 - e["End Y"]) * width,
     })
-    return validate_events(out).reset_index(drop=True)
+    out = validate_events(out).reset_index(drop=True)
+    out.attrs["defensive_exclusions"] = counts
+    return out
 
 
 def load_metrica_game(
@@ -122,8 +140,13 @@ def load_metrica_game(
     Both come back in the same orientation: the per-period flip is derived from the tracking
     (where the teams actually stand), then applied to the events too."""
     d = Path(root) / "data" / f"Sample_Game_{game}"
-    tracking = _load_tracking_raw(d, game, length, width)
-    events = _load_events_raw(d, game, length, width)
+    if game == 3:
+        tracking, raw, metadata = _load_epts_raw(d, length, width)
+        events = _canonical_events(raw, game, length, width)
+        tracking.attrs.update(metadata)
+    else:
+        tracking = _load_tracking_raw(d, game, length, width)
+        events = _load_events_raw(d, game, length, width)
     flips = attack_flips(tracking)
     tracking = flip_periods(tracking, flips, ["x", "y"])
     events = flip_periods(events, flips, ["x0", "y0", "x1", "y1"])
@@ -134,3 +157,77 @@ def load_metrica_game(
 def load_metrica(root: str | Path, game: int = 1, **kwargs) -> pd.DataFrame:
     """Tracking only; see load_metrica_game."""
     return load_metrica_game(root, game, **kwargs)[0]
+
+
+
+def _load_epts_raw(d: Path, length: float, width: float):
+    """Read only local Game 3 feeds; Kloppy is optional for the CSV games."""
+    try:
+        from kloppy import metrica
+    except ImportError as exc:
+        raise ImportError("Game 3 needs Kloppy. Install it with: pip install -e '.[metrica-epts]'") from exc
+    paths = [d / f"Sample_Game_3_{suffix}" for suffix in ("metadata.xml", "tracking.txt", "events.json")]
+    for path in paths:
+        if not path.is_file() or not path.stat().st_size:
+            raise FileNotFoundError(f"Complete local Metrica Game 3 source required: {path}")
+    # Import only after Kloppy succeeds so Games 1-2 retain no EPTS dependency.
+    from lxml.etree import XMLSyntaxError
+    try:
+        return _parse_epts_sources(paths, length, width, metrica)
+    except (XMLSyntaxError, ValueError) as exc:
+        # JSONDecodeError and UnicodeDecodeError are ValueError subclasses.
+        # Normalize expected external-source failures at ingestion, preserving
+        # the cause for diagnostics and the dashboard's existing error boundary.
+        raise ValueError(
+            f"Invalid local Metrica Game 3 metadata/tracking/events in {d}: {exc}. "
+            "Download or restore the complete metadata.xml, tracking.txt, and events.json "
+            "source files from Metrica Sports sample-data."
+        ) from exc
+
+
+def _parse_epts_sources(paths: list[Path], length: float, width: float, metrica):
+    """Deserialize and canonicalize the already checked local Game 3 feeds."""
+    # Open binary streams explicitly: no URL or remote filesystem is handed to Kloppy.
+    with paths[0].open("rb") as meta, paths[1].open("rb") as positions:
+        dataset = metrica.load_tracking_epts(meta, positions, coordinates="metrica")
+    rows = []
+    for frame in dataset.records:
+        time = (frame.period.start_timestamp + frame.timestamp).total_seconds()
+        prefix = ("metrica_3", frame.period.id, frame.frame_id, time)
+        for player, data in frame.players_data.items():
+            point = data.coordinates
+            if point is not None and np.isfinite([point.x, point.y]).all():
+                rows.append((*prefix, player.team.ground.value, player.player_id,
+                             (point.x - .5) * length, (.5 - point.y) * width))
+        point = frame.ball_coordinates
+        if point is not None and np.isfinite([point.x, point.y]).all():
+            rows.append((*prefix, "ball", "ball", (point.x - .5) * length, (.5 - point.y) * width))
+    from soccer_tactics.schema import COLUMNS
+    tracking = validate(pd.DataFrame(rows, columns=COLUMNS))
+    score = dataset.metadata.score
+    del rows, dataset
+    with paths[0].open("rb") as meta, paths[2].open("rb") as source:
+        event_dataset = metrica.load_event(source, meta, coordinates="metrica")
+    # Kloppy may emit synthetic ball-out records sharing a raw event. Retain each source once.
+    raw_events = {event.raw_event["index"]: event.raw_event for event in event_dataset.records}
+    teams = {team.team_id: team.ground.value for team in event_dataset.metadata.teams}
+    # Set pieces are folded into Kloppy passes/shots. Preserve them for penalty exclusion.
+    import json
+    with paths[2].open(encoding="utf-8") as stream:
+        for event in json.load(stream)["data"]:
+            if event["type"]["name"] == "SET PIECE":
+                raw_events[event["index"]] = event
+    records = []
+    for _, event in sorted(raw_events.items()):
+        subtype = event.get("subtypes") or []
+        if isinstance(subtype, dict):
+            subtype = [subtype]
+        records.append({"Team": teams[event["team"]["id"]], "Type": event["type"]["name"],
+                        "Subtype": "-".join(item["name"] for item in subtype), "Period": event["period"],
+                        "Start Frame": event["start"]["frame"], "Start Time [s]": event["start"]["time"],
+                        "From": event["from"]["id"], "To": (event.get("to") or {}).get("id"),
+                        "Start X": event["start"]["x"], "Start Y": event["start"]["y"],
+                        "End X": event["end"]["x"], "End Y": event["end"]["y"]})
+    return tracking, pd.DataFrame(records), {
+        "source_score": {"home": score.home, "away": score.away}, "source_team_ids": teams,
+    }

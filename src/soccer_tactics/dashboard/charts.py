@@ -109,3 +109,16 @@ def evidence_pitch(frame: pd.DataFrame, evidence, *, control: bool = False, trai
         fig.add_annotation(x=evidence.x1, y=evidence.y1, ax=evidence.x0, ay=evidence.y0,
                            xref="x", yref="y", axref="x", ayref="y", arrowhead=3, arrowwidth=3, arrowcolor="#f3dc87")
     return fig
+
+
+
+def shot_map(evidence, team: str) -> go.Figure:
+    """Source shot origins rotated into the selected team's attacking direction."""
+    fig = pitch("Shot origins · attacking right")
+    sign = 1 if team == "home" else -1
+    shots = [e for e in evidence if e.team == team and e.event == "shot"]
+    fig.add_trace(go.Scatter(x=[sign * e.x0 for e in shots], y=[sign * e.y0 for e in shots],
+        mode="markers", marker=dict(color=COLORS[team], size=11),
+        text=[f"{e.event_id} · P{e.period} · {e.time_s:.2f}s" for e in shots],
+        hovertemplate="%{text}<extra></extra>", name="Shot origin"))
+    return fig

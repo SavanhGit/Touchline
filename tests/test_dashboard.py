@@ -57,6 +57,8 @@ import sys, pickle
 from pathlib import Path
 sys.path.insert(0, {str(Path(__file__).resolve().parents[1])!r})
 import app as dashboard
+import importlib
+importlib.reload(dashboard)
 import streamlit as st
 dashboard.DATA = Path({str(root)!r})
 dashboard.IDSSE_DATA = Path({str(tmp_path / "idsse")!r})
@@ -82,7 +84,7 @@ dashboard.main()
     return AppTest.from_string(script, default_timeout=30)
 
 
-@pytest.mark.parametrize("sources", [-1, 0, 5, 7])
+@pytest.mark.parametrize("sources", [-1, 0])
 def test_missing_sources_stop_before_modeling(tmp_path, sources):
     app = synthetic_app(tmp_path, sources=sources).run()
     assert not app.exception
@@ -294,7 +296,7 @@ dashboard.main()
     assert app.title[0].value == "What shaped the result?"
     app.selectbox(key="selected_team").select("home").run()
     assert not app.exception
-    assert any("Evidence ID: 1:1:0:0" in item.value for item in app.caption)
+    assert any(f"Evidence ID: {report.findings[0].evidence[0].event_id}" in item.value for item in app.caption)
 
 
 @pytest.mark.skipif(len(GAMES) < 2, reason="requires both real Metrica games")
@@ -312,3 +314,93 @@ def test_dashboard_match_team_and_evidence_navigation():
     assert not app.exception
     app.selectbox(key="selected_match").select("metrica_2").run()
     assert not app.exception
+
+
+def test_dashboard_v4_sections_render_for_metrica(tmp_path):
+    app = synthetic_app(tmp_path).run()
+    assert not app.exception
+    headings = {item.value for item in app.subheader}
+    assert {"Possessions and transitions", "Defensive actions", "Shot locations and outcomes"} <= headings
+    assert any("10 seconds" in item.value for item in app.caption)
+    assert any("observed tracking minutes" in item.value for item in app.caption)
+    assert any("shot quality" in item.value for item in app.caption)
+    assert any("5 shots" in item.value for item in app.caption)
+
+
+def test_dashboard_v4_empty_summaries_are_explained(tmp_path):
+    app = synthetic_app(tmp_path, empty=True).run()
+    assert not app.exception
+    text = " ".join(item.value for item in app.info)
+    for expected in ("No observed possessions", "No qualifying transitions", "No recognized defensive actions", "No shots"):
+        assert expected in text
+
+
+
+@pytest.mark.parametrize("sources", [5, 7])
+def test_single_complete_catalogued_match_is_selectable(tmp_path, sources):
+    app = synthetic_app(tmp_path, sources=sources).run()
+    assert not app.exception
+    assert app.title[0].value == "What shaped the result?"
+    assert app.selectbox(key="selected_match").value == "metrica_1"
+    assert len(app.selectbox(key="selected_match").options) == 1
+
+
+def test_three_match_dashboard_cache_retains_training_sources(monkeypatch):
+    import importlib
+    import app as dashboard
+    importlib.reload(dashboard)
+    calls = []
+    def load(root, game):
+        calls.append(game)
+        return {"game": game}
+    monkeypatch.setattr(dashboard, "load_metrica_bundle", load)
+    for _ in range(2):
+        for game in (1, 2, 3):
+            assert dashboard.load_bundle(game, ("v4-cache-test",))["game"] == game
+    assert calls == [1, 2, 3]
+
+@pytest.mark.parametrize("selected_game", [1, 2])
+def test_malformed_game3_heldout_source_shows_dashboard_error(tmp_path, selected_game):
+    pytest.importorskip("kloppy")
+    root = tmp_path / "sources"
+    for game in (1, 2):
+        folder = root / "data" / f"Sample_Game_{game}"
+        folder.mkdir(parents=True)
+        for suffix in ("EventsData", "TrackingData_Home_Team", "TrackingData_Away_Team"):
+            (folder / f"Sample_Game_{game}_Raw{suffix}.csv").write_text("source placeholder")
+    folder = root / "data" / "Sample_Game_3"
+    folder.mkdir()
+    (folder / "Sample_Game_3_metadata.xml").write_text("<broken")
+    (folder / "Sample_Game_3_tracking.txt").write_text("nonempty")
+    (folder / "Sample_Game_3_events.json").write_text('{"data": []}')
+    script = f'''
+import sys, importlib
+from pathlib import Path
+sys.path.insert(0, {str(Path(__file__).resolve().parents[1])!r})
+sys.path.insert(0, {str(Path(__file__).resolve().parent)!r})
+import app as dashboard
+importlib.reload(dashboard)
+import streamlit as st
+from factories import make_bundle
+from soccer_tactics.loaders.bundle import load_metrica_bundle
+dashboard.DATA = Path({str(root)!r})
+dashboard.IDSSE_DATA = Path({str(tmp_path / "idsse")!r})
+dashboard.IDSSE_MANIFEST = Path({str(tmp_path / "manifest.json")!r})
+st.session_state["selected_match"] = "metrica_{selected_game}"
+def load(root, game):
+    if game == 3:
+        return load_metrica_bundle(root, game)
+    return make_bundle("metrica_" + str(game))
+dashboard.load_metrica_bundle = load
+dashboard.main()
+'''
+    app = AppTest.from_string(script, default_timeout=30).run()
+    assert not app.exception
+    assert app.selectbox(key="selected_match").value == f"metrica_{selected_game}"
+    assert not app.title
+    assert len(app.error) == 1
+    message = app.error[0].value
+    assert "Match analysis unavailable" in message
+    assert "Game 3" in message and "metadata" in message
+    assert str(folder) in message
+    assert "restore" in message.lower() or "download" in message.lower()
