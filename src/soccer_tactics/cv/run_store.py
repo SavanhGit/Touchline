@@ -8,10 +8,52 @@ from pathlib import Path
 import re
 import shutil
 import tempfile
+from typing import TypedDict
 from uuid import uuid4
 
 from soccer_tactics.cv.adapter import TrackAssignment, video_tracks_to_tracking
 from soccer_tactics.cv.video_types import VideoTrackingResult
+
+
+class ModelProvenance(TypedDict):
+    """Non-path model identifier and release/checkpoint version."""
+
+    id: str
+    version: str
+
+
+class RunProvenance(TypedDict):
+    """Model roles and package releases used to produce a video run."""
+
+    models: dict[str, ModelProvenance]
+    packages: dict[str, str]
+
+
+def _provenance_token(value: object) -> str:
+    # Names, IDs and versions are tokens, never local paths, URLs or free text.
+    if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.+@-]{0,127}", value):
+        raise ValueError("provenance names, IDs and versions must be non-path identifier tokens")
+    return value
+
+
+def _safe_provenance(value: object) -> RunProvenance:
+    if not isinstance(value, dict) or set(value) != {"models", "packages"}:
+        raise ValueError("provenance requires only models and packages")
+    models, packages = value["models"], value["packages"]
+    if not isinstance(models, dict) or not isinstance(packages, dict):
+        raise ValueError("provenance models and packages must be mappings")
+    safe_models = {}
+    for role, model in models.items():
+        if not isinstance(model, dict) or set(model) != {"id", "version"}:
+            raise ValueError("provenance models require only id and version")
+        safe_models[_provenance_token(role)] = ModelProvenance(
+            id=_provenance_token(model["id"]), version=_provenance_token(model["version"]),
+        )
+    return RunProvenance(
+        models=safe_models,
+        packages={_provenance_token(name): _provenance_token(version)
+                  for name, version in packages.items()},
+    )
 
 
 def source_sha256(video_path: Path) -> str:
@@ -32,7 +74,10 @@ def save_video_run(
     """Publish a complete run directory atomically beneath ``output_root``.
 
     The caller provides match_id, fps, home_attacks_positive_x and the source
-    SHA-256 in video_metadata. Only explicitly allowed clip properties persist.
+    SHA-256 in video_metadata. Optional ``provenance`` follows RunProvenance;
+    names, IDs and versions must be 1-128 character non-path tokens starting
+    with an alphanumeric character, followed by alphanumerics or ``_.+@-``.
+    Only explicitly allowed clip properties and validated provenance persist.
     """
     source = result.video_metadata
     source_hash = source.get("source_sha256")
@@ -51,6 +96,8 @@ def save_video_run(
         "period": source.get("period", 1),
         "assignments": {track_id: asdict(value) for track_id, value in assignments.items()},
     }
+    if "provenance" in source:
+        metadata["provenance"] = _safe_provenance(source["provenance"])
     for key in ("width", "height", "frame_count", "duration_s"):
         value = source.get(key)
         if isinstance(value, (int, float)) and math.isfinite(value):
