@@ -24,16 +24,38 @@ ANSWER_FORMAT = {
 MAX_TOOL_ROUNDS = 4
 MAX_TOOL_CALLS = 8
 
-# A conservative language guard supplements the model's evidence instructions.
-# Apply it to both questions and returned text: citations identify observations,
-# but cannot validate a causal relationship between those observations.
-_CAUSAL_LANGUAGE = re.compile(
+# Citations identify observations, but cannot validate causal relationships.
+# Recognize relationship/claim constructions on both sides of the chat boundary.
+_CAUSAL_RELATION = re.compile(
     r"\b(?:cause[sd]?|causing|causal(?:ity|ly)?|causation)\b"
     r"|\b(?:lead(?:s|ing)?|led)\s+to\b"
     r"|\bresult(?:s|ed|ing)?\s+(?:in|from)\b"
     r"|\bbecause\b|\bdue\s+to\b|\bresponsible\s+for\b"
-    r"|\battribut(?:e[sd]?|ing|able)\b", re.I,
+    r"|\battribut(?:e[sd]?|ing|able)\b"
+    r"|\bexplain(?:s|ed|ing)?\s+why\b"
+    r"|\b(?:would|could)\b[^.!?;]{0,100}\b(?:have\s+)?"
+    r"(?:prevent(?:ed)?|avoid(?:ed)?|guarantee[ds]?|reverse[ds]?)\b", re.I,
 )
+# Exempt only an explicit negated evidence limitation, never its entire sentence:
+# a disclaimer followed by 'but X caused Y' must still be rejected.
+_NEGATED_CAUSAL_LIMITATION = re.compile(
+    r"\b(?:do(?:es)?\s+not|cannot|can't|can\s+not)\s+"
+    r"(?:establish|prove|demonstrate|determine)\s+"
+    r"(?:a\s+|that\s+)?(?:causal\s+(?:relationship|link)|causality|causation|cause)\b"
+    r"|\b(?:is|are)\s+not\s+(?:proof|evidence)\s+of\s+"
+    r"(?:a\s+)?(?:causal\s+(?:relationship|link)|causality|causation)\b", re.I,
+)
+
+
+def _has_unsupported_causal_claim(text: str) -> bool:
+    """Keep accurate evidence limitations while rejecting causal assertions/requests.
+
+    This is a conservative language backstop to the evidence prompt, not a proof
+    of natural-language entailment. Ordinary 'why did we lose?' questions remain
+    answerable with descriptive report patterns.
+    """
+    claims = _NEGATED_CAUSAL_LIMITATION.sub("", text)
+    return bool(_CAUSAL_RELATION.search(claims))
 
 
 @dataclass(frozen=True)
@@ -174,7 +196,7 @@ def _parse_answer(content: Any, allowed_ids: set[str]) -> ChatAnswer:
         return _withhold()
     if status == "answered" and not citation_ids:
         return _withhold()
-    if _CAUSAL_LANGUAGE.search(text):
+    if _has_unsupported_causal_claim(text):
         return _causal_abstention()
     return ChatAnswer(status, text.strip(), citation_ids)
 
@@ -193,7 +215,7 @@ def answer_question(
     """
     if not isinstance(question, str) or not question.strip():
         raise ValueError("question cannot be empty")
-    if _CAUSAL_LANGUAGE.search(question):
+    if _has_unsupported_causal_claim(question):
         return _causal_abstention()
     client = client or OllamaChatClient()
     messages = [{"role": "system", "content": _system_prompt(context)}]

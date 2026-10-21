@@ -170,6 +170,23 @@ def _load_epts_raw(d: Path, length: float, width: float):
     for path in paths:
         if not path.is_file() or not path.stat().st_size:
             raise FileNotFoundError(f"Complete local Metrica Game 3 source required: {path}")
+    # Import only after Kloppy succeeds so Games 1-2 retain no EPTS dependency.
+    from lxml.etree import XMLSyntaxError
+    try:
+        return _parse_epts_sources(paths, length, width, metrica)
+    except (XMLSyntaxError, ValueError) as exc:
+        # JSONDecodeError and UnicodeDecodeError are ValueError subclasses.
+        # Normalize expected external-source failures at ingestion, preserving
+        # the cause for diagnostics and the dashboard's existing error boundary.
+        raise ValueError(
+            f"Invalid local Metrica Game 3 metadata/tracking/events in {d}: {exc}. "
+            "Download or restore the complete metadata.xml, tracking.txt, and events.json "
+            "source files from Metrica Sports sample-data."
+        ) from exc
+
+
+def _parse_epts_sources(paths: list[Path], length: float, width: float, metrica):
+    """Deserialize and canonicalize the already checked local Game 3 feeds."""
     # Open binary streams explicitly: no URL or remote filesystem is handed to Kloppy.
     with paths[0].open("rb") as meta, paths[1].open("rb") as positions:
         dataset = metrica.load_tracking_epts(meta, positions, coordinates="metrica")

@@ -358,3 +358,49 @@ def test_three_match_dashboard_cache_retains_training_sources(monkeypatch):
         for game in (1, 2, 3):
             assert dashboard.load_bundle(game, ("v4-cache-test",))["game"] == game
     assert calls == [1, 2, 3]
+
+@pytest.mark.parametrize("selected_game", [1, 2])
+def test_malformed_game3_heldout_source_shows_dashboard_error(tmp_path, selected_game):
+    pytest.importorskip("kloppy")
+    root = tmp_path / "sources"
+    for game in (1, 2):
+        folder = root / "data" / f"Sample_Game_{game}"
+        folder.mkdir(parents=True)
+        for suffix in ("EventsData", "TrackingData_Home_Team", "TrackingData_Away_Team"):
+            (folder / f"Sample_Game_{game}_Raw{suffix}.csv").write_text("source placeholder")
+    folder = root / "data" / "Sample_Game_3"
+    folder.mkdir()
+    (folder / "Sample_Game_3_metadata.xml").write_text("<broken")
+    (folder / "Sample_Game_3_tracking.txt").write_text("nonempty")
+    (folder / "Sample_Game_3_events.json").write_text('{"data": []}')
+    script = f'''
+import sys, importlib
+from pathlib import Path
+sys.path.insert(0, {str(Path(__file__).resolve().parents[1])!r})
+sys.path.insert(0, {str(Path(__file__).resolve().parent)!r})
+import app as dashboard
+importlib.reload(dashboard)
+import streamlit as st
+from factories import make_bundle
+from soccer_tactics.loaders.bundle import load_metrica_bundle
+dashboard.DATA = Path({str(root)!r})
+dashboard.IDSSE_DATA = Path({str(tmp_path / "idsse")!r})
+dashboard.IDSSE_MANIFEST = Path({str(tmp_path / "manifest.json")!r})
+st.session_state["selected_match"] = "metrica_{selected_game}"
+def load(root, game):
+    if game == 3:
+        return load_metrica_bundle(root, game)
+    return make_bundle("metrica_" + str(game))
+dashboard.load_metrica_bundle = load
+dashboard.main()
+'''
+    app = AppTest.from_string(script, default_timeout=30).run()
+    assert not app.exception
+    assert app.selectbox(key="selected_match").value == f"metrica_{selected_game}"
+    assert not app.title
+    assert len(app.error) == 1
+    message = app.error[0].value
+    assert "Match analysis unavailable" in message
+    assert "Game 3" in message and "metadata" in message
+    assert str(folder) in message
+    assert "restore" in message.lower() or "download" in message.lower()

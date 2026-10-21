@@ -320,3 +320,49 @@ def test_every_displayed_nested_v4_summary_citation_is_usable(event_type):
     displayed_ids = {cid for row in rows for cid in row["event_ids"]}
     assert displayed_ids <= set(summary["citation_ids"])
     assert displayed_ids <= set(context.allowed_citation_ids)
+
+@pytest.mark.parametrize("limitation", [
+    "These descriptive counts do not establish causality.",
+    "The evidence cannot establish a causal relationship.",
+    "These counts are not proof of causation.",
+])
+@pytest.mark.parametrize("final_response", [False, True])
+def test_cited_descriptive_answers_preserve_negated_causal_limitations(limitation, final_response):
+    text = "Four of five passes did not enter. " + limitation
+    reply = {"message": {"content": json.dumps({"status": "answered", "text": text,
+        "citation_ids": ["m1:1:12:0"]})}}
+    replies = [{"message": {"content": "Not JSON yet."}}, reply] if final_response else [reply]
+    answer = answer_question(_context(), "Why did the team lose?", client=SequenceClient(replies))
+    assert answer.status == "answered"
+    assert answer.text == text
+    assert answer.citation_ids == ["m1:1:12:0"]
+
+
+@pytest.mark.parametrize("claim", [
+    "Closer cover would have prevented the goal.",
+    "The transitions explain why the team lost.",
+    "These counts do not establish causality, but closer cover would have prevented the goal.",
+    "These counts do not establish causality. The turnover caused the goal.",
+])
+@pytest.mark.parametrize("final_response", [False, True])
+def test_causal_explanations_and_counterfactual_claims_are_declined(claim, final_response):
+    reply = {"message": {"content": json.dumps({"status": "answered", "text": claim,
+        "citation_ids": ["m1:1:12:0"]})}}
+    replies = [{"message": {"content": "Not JSON yet."}}, reply] if final_response else [reply]
+    answer = answer_question(_context(), "What happened next?", client=SequenceClient(replies))
+    assert answer.status == "unsupported"
+    assert answer.citation_ids == []
+
+
+@pytest.mark.parametrize("question", [
+    "Would closer cover have prevented the goal?",
+    "Do the transitions explain why the team lost?",
+    "Would a different formation have guaranteed a win?",
+    "What single change would definitely reverse the result?",
+])
+def test_direct_counterfactual_questions_abstain_before_model_call(question):
+    client = SequenceClient([])
+    answer = answer_question(_context(), question, client=client)
+    assert answer.status == "unsupported"
+    assert answer.citation_ids == []
+    assert not client.calls
