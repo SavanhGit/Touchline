@@ -1,11 +1,26 @@
 import numpy as np
 import pandas as pd
 import pytest
+from pathlib import Path
 
 from soccer_tactics.analytics.impact import pass_values, player_impact_with_actions
 from soccer_tactics.analytics.trajectory import constant_velocity_forecast
 from soccer_tactics.cv import detections_to_tracking
 from soccer_tactics.schema import COLUMNS, EVENT_COLUMNS, FPS
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_roadmap_records_origin_only_idsse_scope_and_completed_release():
+    roadmap = (ROOT / "docs/ROADMAP.md").read_text(encoding="utf-8")
+    assert "origin-only IDSSE" in roadmap
+    assert "tracking synchronization" in roadmap
+    assert "attack direction" in roadmap
+    assert "pass endpoints" in roadmap
+    assert "IDSSE xT" in roadmap
+    assert "V2 origin-only release completed: 2026-10-21 11:30 EDT" in roadmap
+    assert "held-out IDSSE evaluation" in roadmap
 
 
 def _tracking():

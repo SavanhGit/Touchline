@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -13,6 +14,28 @@ from scripts.validate_release import (
     run,
     verify_evidence,
 )
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_idsse_setup_and_release_docs_are_reproducible_and_attributed():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    validation = (ROOT / "docs/VALIDATION.md").read_text(encoding="utf-8")
+    assert 'pip install -e ".[idsse]"' in readme
+    assert "data/raw/idsse" in readme
+    assert "scripts/validate_idsse.py --data-root data/raw/idsse --output docs/validation/idsse-v1.json" in readme
+    assert "all seven" in readme.lower() and "fingerprint" in readme.lower()
+    assert "raw XML" in readme and "Git" in readme
+    assert "Deutsche Fußball Liga (DFL)" in readme
+    assert "CC BY 4.0" in readme
+    assert "Bassek et al." in readme and "Scientific Data" in readme
+    assert "7/7" in validation and "21/21" in validation
+    assert "1600 MiB" in validation and "traced Python allocation" in validation
+    for deferred in ("tracking synchronization", "attack direction", "pass endpoints",
+                     "IDSSE xT", "progression"):
+        assert deferred in validation
+    assert "held-out IDSSE evaluation" in validation
 
 
 def _bundle_and_source(event="pass", success=True):
