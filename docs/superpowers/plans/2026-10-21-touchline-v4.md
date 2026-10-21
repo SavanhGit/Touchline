@@ -36,7 +36,7 @@
 
 **Files:** `src/soccer_tactics/loaders/metrica.py`, `src/soccer_tactics/loaders/catalog.py`, `src/soccer_tactics/loaders/bundle.py`, `src/soccer_tactics/schema.py`, `pyproject.toml`, focused loader tests.
 
-**Interfaces:** Preserve `load_metrica_game(root, game)` return compatibility. Add Game 3 through `load_metrica_bundle(root, game=3)` and the catalogue. Add optional extra `[metrica-epts] = ["kloppy>=3.17,<4"]`; local loading must not fetch source files. The canonical event types remain `pass`, `shot`, `tackle`, `interception`, and `recovery`; do not add ambiguous source subtypes.
+**Interfaces:** Preserve `load_metrica_game(root, game)` return compatibility. Add Game 3 through `load_metrica_bundle(root, game=3)` and the catalogue. Add optional extra `[metrica-epts] = ["kloppy>=3.17,<4"]`; local loading must not fetch source files. The canonical event types remain `pass`, `shot`, `tackle`, `interception`, and `recovery`; do not add ambiguous source subtypes. Map only `CHALLENGE` subtype `TACKLE-WON` to `tackle/success=True`, `TACKLE-LOST` to `tackle/success=False`, `RECOVERY/INTERCEPTION` to `interception/success=True`, and `RECOVERY/THEFT` to `recovery/success=True`. Exclude fault/advantage, aerial/ground, dribble, blank, saved, and blocked subtypes and count each exclusion reason.
 
 - [ ] Add failing tests `test_game3_epts_to_canonical_bundle`, `test_game3_event_clocks_align_to_tracking`, and `test_game3_catalogue_includes_only_complete_sources`; assert source score is 0–2, canonical columns validate, and event orientation agrees with tracking.
 - [ ] Add `test_defensive_event_subtype_mapping` and `test_ambiguous_defensive_events_are_excluded_and_counted` for the documented accepted/rejected subtype mapping.

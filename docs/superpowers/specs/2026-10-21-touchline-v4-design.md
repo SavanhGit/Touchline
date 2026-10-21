@@ -8,7 +8,7 @@ Help a user inspect match patterns that may have contributed to a result and exp
 
 - Spatial and sequence analysis uses validated Metrica event and tracking data. IDSSE remains limited to factual source-origin queries.
 - Extend Metrica ingestion to the local public Sample Game 3 EPTS/FIFA data as well as Games 1–2. Keep source data outside Git and do not download data or models automatically.
-- Include possession sequences, transitions, and defensive actions only where source semantics can be mapped explicitly. Preserve source provenance and omit ambiguous action labels.
+- Include possession sequences, transitions, and defensive actions only where source semantics can be mapped explicitly. Preserve source provenance and omit ambiguous action labels. Accept only Metrica `CHALLENGE/TACKLE-WON`, `CHALLENGE/TACKLE-LOST`, `RECOVERY/INTERCEPTION`, and `RECOVERY/THEFT` with their direct outcomes; exclude ambiguous challenge and recovery subtypes.
 - Define a transition as a new observed possession following an opponent turnover or successful defensive action. Analyze the first 10 seconds only; never infer that the transition caused a later shot.
 - Add shot-location and outcome summaries with sample counts. Do not fit learned shot-quality estimates in V4.
 - Keep tactical recommendations deterministic and cautious. Each recommendation needs traceable supporting moments and a stated tradeoff.
