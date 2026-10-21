@@ -20,9 +20,16 @@ class CatalogEntry:
 
 def _metrically_available(root: Path, game: int) -> bool:
     folder = root / "data" / f"Sample_Game_{game}"
+    if game == 3:
+        paths = [folder / f"Sample_Game_3_{suffix}" for suffix in ("metadata.xml", "tracking.txt", "events.json")]
+        return all(path.is_file() and path.stat().st_size > 0 for path in paths)
     paths = [folder / f"Sample_Game_{game}_Raw{suffix}.csv" for suffix in
              ("EventsData", "TrackingData_Home_Team", "TrackingData_Away_Team")]
     return all(path.is_file() and path.stat().st_size > 0 for path in paths)
+
+
+def _metrica_epts_available() -> bool:
+    return importlib.util.find_spec("kloppy") is not None
 
 
 def _fingerprints(root: Path) -> list[dict]:
@@ -46,11 +53,13 @@ def list_match_catalogue(metrica_root: str | Path, idsse_root: str | Path,
     """List usable Metrica sources and manifest candidates with explicit readiness."""
     metrica_root, idsse_root = Path(metrica_root), Path(idsse_root)
     entries = []
-    for game in (1, 2):
+    for game in (1, 2, 3):
         if _metrically_available(metrica_root, game):
+            ready = game != 3 or _metrica_epts_available()
+            reason = None if ready else "Game 3 needs Kloppy. Install it with: pip install -e '.[metrica-epts]'"
             entries.append(CatalogEntry("Metrica", f"metrica_{game}", str(metrica_root),
                                         f"Metrica · Sample game {game}",
-                                        {"home": "Home (anonymous)", "away": "Away (anonymous)"}, True))
+                                        {"home": "Home (anonymous)", "away": "Away (anonymous)"}, ready, reason))
 
     manifest = None
     manifest_error = None
