@@ -7,6 +7,7 @@ from typing import Any, Callable
 import pandas as pd
 
 from soccer_tactics.agent.chat import ChatAnswer, answer_question
+from soccer_tactics.agent.ollama import model_from_env
 from soccer_tactics.agent.tools import AnalysisContext
 
 
@@ -130,7 +131,8 @@ def render_chat_panel(st, context: AnalysisContext, selection: tuple[str, str, s
                 answer: ChatAnswer = answerer(context, question, prior_history)
             except Exception as exc:
                 st.error(f"Local assistant unavailable: {exc}")
-                st.caption("Start Ollama with `ollama serve`, then install the configured model with `ollama pull qwen3:8b` (or set TOUCHLINE_OLLAMA_MODEL). Analysis remains available while chat is offline.")
+                model = model_from_env()
+                st.caption(f"Start Ollama with `ollama serve`, then install the configured model with `ollama pull {model}`. Set TOUCHLINE_OLLAMA_MODEL to choose another local model. Analysis remains available while chat is offline.")
             else:
                 valid_ids = [value for value in answer.citation_ids
                              if value in context.allowed_citation_ids

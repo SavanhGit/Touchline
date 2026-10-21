@@ -87,10 +87,11 @@ class _ContextManager:
 class _FakeStreamlit:
     def __init__(self):
         self.session_state = {}
+        self.captions = []
 
     def container(self, **kwargs): return _ContextManager()
     def subheader(self, value): pass
-    def caption(self, value): pass
+    def caption(self, value): self.captions.append(value)
     def text_input(self, label, key): return "What happened?"
     def button(self, *args, **kwargs): return True
     def markdown(self, value): pass
@@ -110,4 +111,18 @@ def test_dashboard_withholds_answer_without_resolvable_citation():
     assert response["status"] == "withheld"
     assert not response["citation_ids"]
     assert "can't verify" in response["content"]
+
+
+def test_dashboard_setup_help_uses_configured_ollama_model(monkeypatch):
+    monkeypatch.setenv("TOUCHLINE_OLLAMA_MODEL", "qwen3:4b")
+    report = analyze_match(make_bundle("1"), "home", [make_bundle("training")])
+    context = build_metrica_context(report)
+    st = _FakeStreamlit()
+
+    render_chat_panel(st, context, ("Metrica", "1", "home"),
+                      answerer=lambda *_: (_ for _ in ()).throw(RuntimeError("offline")))
+
+    help_text = " ".join(st.captions)
+    assert "ollama pull qwen3:4b" in help_text
+    assert "ollama pull qwen3:8b" not in help_text
 
