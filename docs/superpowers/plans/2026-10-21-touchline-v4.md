@@ -54,7 +54,10 @@
 - [ ] Add `test_transition_includes_exact_window_boundary`, `test_transition_excludes_event_after_window`, `test_transition_starts_at_successful_defensive_action`, `test_no_transition_without_observed_opponent_event`, and `test_transition_never_crosses_period`.
 - [ ] Run focused tests to establish the expected failures.
 - [ ] Implement deterministic segmentation and transition windows without inferring carries or causal shot sequences.
-- [ ] Run tests and commit `feat: model observed possessions and transitions`.
+
+
+- [ ] Use the fixed transition rule: start at a successful defensive action or at the first opponent event after an unsuccessful pass; stop at possession end, 10 seconds, or period end, whichever is first. Emit no transition when no opponent event is observed within the window. Preserve source order for events sharing a frame.
+- [ ] Run `pytest tests/test_sequences.py -q` and commit `feat: model observed possessions and transitions`.
 
 ### Task 3: Report Metrics, Evidence, and Tactical Hypotheses
 
@@ -67,7 +70,10 @@
 - [ ] Add `test_unknown_score_and_empty_defense_are_explicit`, `test_low_shot_count_has_no_quality_claim`, and `test_insufficient_pattern_evidence_returns_fewer_findings`.
 - [ ] Integrate the sequence outputs, defensive-action summaries, and shot-location/outcome summaries; do not add a learned shot-quality model.
 - [ ] Add deterministic findings only when source-backed thresholds are met; every suggestion includes citations and a tradeoff, and no claim establishes causation.
-- [ ] Run focused report/impact/agent-tool tests and commit `feat: add evidence-backed V4 report metrics`.
+
+
+- [ ] Use finding denominator >= 5 and support >= 3. Keep one per category, sort by supporting-event count descending with stable tie order `transition`, `defense`, `buildup`, `progression`, `danger`, and return at most three; this is a display safeguard, not significance. Keep all summary tables even when patterns do not qualify.
+- [ ] Run `pytest tests/test_report.py tests/test_impact.py tests/test_agent_tools.py -q` and commit `feat: add evidence-backed V4 report metrics`.
 
 ### Task 4: Dashboard and Local Chat Integration
 
@@ -86,15 +92,7 @@
 **Files:** `scripts/validate_real_data.py`, `docs/VALIDATION.md`, `docs/ROADMAP.md`, `README.md`, validation tests.
 
 - [ ] Extend real-data validation to export both teams for Games 1–3 and verify score, event totals, source orientation, period integrity, sample rates, and other-match-only xT provenance.
-- [ ] Compare sequence/defensive/shot summaries with simpler match-level baselines; include sample sizes and avoid significance claims unsupported by three matches.
-- [ ] Document the optional Kloppy installation extra, local Game 3 data layout, dataset attribution, limitations, and one-command dashboard launch.
+- [ ] Run leave-one-match-out folds for Games 1–3; compare each held-out transition shot rate with the same team’s overall possession shot rate and held-out defensive actions per 90 with the other-match team average. Report shots and goals by channel against the team-wide shot/goal totals, with raw counts and denominators; no significance or learned shot-quality claims.
+- [ ] Audit every tactical suggestion in each held-out report: confirm its cited source events support the observation and its stated tradeoff is visible; record descriptive accuracy separately and do not claim the suggestion would change the result. Document the optional Kloppy installation extra, local Game 3 data layout, source attribution, limitations, and the one-command dashboard launch.
 - [ ] Update V4 roadmap status only after all validation gates pass; otherwise leave V4 in progress and record the missing gate.
 - [ ] Run the full suite with the optional `metrica-epts` extra and real local source files; commit `docs: document and validate V4 analysis`.
-
-### Task 2 output columns
-
-`segment_possessions` returns exactly the possession columns listed in the spec. `summarize_transitions` returns exactly the transition columns listed in the spec. Preserve stable source order for events sharing a frame. A transition starts on a successful tackle/interception/recovery, or at the first opponent event after an unsuccessful pass, and stops at possession end, 10 seconds, or period end (whichever comes first); if the opponent has no event before the window/period ends, emit no row.
-
-### Task 3 finding selection
-
-A candidate pattern requires at least five denominator events and at least three events supporting the highlighted pattern. Return at most one per category, sorted by support count descending with stable tie order `transition`, `defense`, `buildup`, `progression`, `danger`, then keep the top three. This is a display safeguard, not a significance test. Retain all report summaries independent of finding selection.
