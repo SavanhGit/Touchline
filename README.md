@@ -18,7 +18,7 @@ The [featured analysis](docs/demo/featured-analysis.md) examines game 1's anonym
 ## Roadmap
 
 - **V1 — Complete (October 20, 2026):** the local Metrica-based analysis dashboard, evidence views and portfolio demo.
-- **V2 — In progress:** validate IDSSE match data, canonical ingestion and held-out evaluation before adding validated matches to the selector.
+- **V2 — Complete (October 21, 2026):** seven audited IDSSE matches in an origin-only catalogue; synchronization, attack direction, pass endpoints and IDSSE xT/progression remain deferred.
 - **Next:** evidence-backed question answering, followed by richer tactical analysis.
 - **Later:** derive tracking from recorded video, then work toward live analysis.
 
@@ -47,7 +47,7 @@ IDSSE support uses the optional Floodlight parser. Download the seven match XML 
 .\.venv\Scripts\python.exe scripts/validate_idsse.py --data-root data/raw/idsse --output docs/validation/idsse-v1.json
 ```
 
-The IDSSE selector is enabled only when the manifest covers all seven discovered matches, contains current fingerprints for every XML file, and every candidate passes the source event-origin quality gate. Changing, adding, or removing XML files requires regenerating the manifest. The origin-only findings retain source coordinates, timestamps, and event-code provenance. They do not establish tracking synchronization or attack direction; pass endpoints remain unknown, so IDSSE xT and progression are unavailable. No held-out IDSSE evaluation is claimed. See [validation notes](docs/VALIDATION.md) for the recorded audit and its limits.
+The IDSSE selector requires a valid manifest covering all seven discovered matches and current fingerprints for every XML file. Only candidates that pass the source event-origin quality gate are selectable; rejected candidates remain excluded with their reasons recorded in the manifest. Changing, adding, or removing XML files requires regenerating the manifest. The origin-only findings retain source coordinates, timestamps, and event-code provenance. They do not establish tracking synchronization or attack direction; pass endpoints remain unknown, so IDSSE xT and progression are unavailable. No held-out IDSSE evaluation is claimed. See [validation notes](docs/VALIDATION.md) for the recorded audit and its limits.
 
 IDSSE data is attributed to the **Deutsche Fußball Liga (DFL)** under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Paper citation: Bassek et al., “An integrated dataset of spatiotemporal and event data in elite soccer,” *Scientific Data* 12, 195 (2025), [doi:10.1038/s41597-025-04505-y](https://doi.org/10.1038/s41597-025-04505-y). The dataset and this project’s derived use remain subject to the linked source terms.
 

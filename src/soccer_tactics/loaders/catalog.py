@@ -60,6 +60,7 @@ def list_match_catalogue(metrica_root: str | Path, idsse_root: str | Path,
         if not isinstance(manifest, dict):
             raise ValueError("manifest root must be an object")
     except (OSError, ValueError, json.JSONDecodeError) as exc:
+        manifest = None
         manifest_error = f"IDSSE validation manifest is unavailable or invalid: {exc}"
 
     if manifest is not None:
@@ -99,7 +100,8 @@ def list_match_catalogue(metrica_root: str | Path, idsse_root: str | Path,
         valid_count = (isinstance(manifest.get("candidate_count"), int)
                        and not isinstance(manifest.get("candidate_count"), bool)
                        and manifest["candidate_count"] == 7
-                       and len(candidates_data or []) == 7)
+                       and isinstance(candidates_data, list)
+                       and len(candidates_data) == 7)
         valid_schema = manifest.get("schema_version") == "idsse-source-quality-v1"
         if not all((valid_fingerprints, valid_candidates, valid_errors, valid_count, valid_schema)):
             manifest_error = "IDSSE validation manifest is malformed or incomplete"

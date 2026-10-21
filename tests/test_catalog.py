@@ -99,6 +99,32 @@ def test_rejected_idsse_candidate_is_present_but_not_ready(tmp_path, monkeypatch
     assert not entry.ready and entry.reason == "quality rejected"
 
 
+@pytest.mark.parametrize("document", [
+    [], 7, "invalid", None,
+    *[{"candidate_count": 7, "candidates": value}
+      for value in (7, True, 7.5, None, {"invalid": "value"}, "invalid")],
+])
+def test_invalid_manifest_types_preserve_metrica_and_disable_idsse(tmp_path, document):
+    metrica = tmp_path / "metrica"
+    for game in (1, 2):
+        folder = metrica / "data" / f"Sample_Game_{game}"
+        folder.mkdir(parents=True)
+        for suffix in ("EventsData", "TrackingData_Home_Team", "TrackingData_Away_Team"):
+            (folder / f"Sample_Game_{game}_Raw{suffix}.csv").write_text("ok")
+    idsse = tmp_path / "idsse"
+    idsse.mkdir()
+    _triplets(idsse)
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps(document))
+
+    entries = catalog.list_match_catalogue(metrica, idsse, manifest)
+
+    assert [entry.match_id for entry in entries if entry.ready] == ["metrica_1", "metrica_2"]
+    rejected = [entry for entry in entries if entry.provider == "IDSSE"]
+    assert len(rejected) == 7
+    assert all(not entry.ready and "manifest" in entry.reason.lower() for entry in rejected)
+
+
 def test_idsse_ids_are_provider_qualified_and_labels_are_from_manifest(tmp_path, monkeypatch):
     idsse = tmp_path / "idsse"
     idsse.mkdir()
