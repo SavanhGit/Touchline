@@ -9,10 +9,13 @@ import streamlit as st
 
 from soccer_tactics.analytics.report import analyze_match
 from soccer_tactics.dashboard.charts import evidence_pitch, pass_map, snapshot, tracking_window
-from soccer_tactics.loaders import load_metrica_bundle
+from soccer_tactics.loaders import load_metrica_bundle, load_idsse_bundle
+from soccer_tactics.loaders.catalog import list_match_catalogue
 
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data" / "raw" / "metrica"
+IDSSE_DATA = ROOT / "data" / "raw" / "idsse"
+IDSSE_MANIFEST = ROOT / "docs" / "validation" / "idsse-v1.json"
 
 st.set_page_config(page_title="Touchline | Soccer Match Analysis", page_icon="⚽", layout="wide")
 
@@ -28,6 +31,26 @@ def load_report(game, team, revision):
     selected = load_bundle(game, revision)
     training = load_bundle(3 - game, revision)
     return analyze_match(selected, team, [training])
+
+
+@st.cache_data(max_entries=2)
+def load_catalogue(revision):
+    return list_match_catalogue(DATA, IDSSE_DATA, IDSSE_MANIFEST)
+
+
+@st.cache_resource(max_entries=2)
+def load_idsse_selected(match_id, source_path, revision):
+    return load_idsse_bundle(source_path, match_id.removeprefix("idsse_"))
+
+
+@st.cache_data(max_entries=4)
+def load_idsse_origin_report(match_id, source_path, revision):
+    bundle = load_idsse_selected(match_id, source_path, revision)
+    columns = ["period", "team", "event", "source_code", "source_timestamp",
+               "gameclock_s", "source_x_m", "source_y_m"]
+    origins = bundle.event_origins.loc[:, columns].copy()
+    origins["team"] = origins.team.map(bundle.team_names)
+    return origins, bundle.score, bundle.team_names, bundle.metadata, bundle.quality
 
 
 def display_value(value, *, rate=False):
@@ -58,21 +81,70 @@ def main():
         source_files = [DATA / "data" / f"Sample_Game_{g}" / f"Sample_Game_{g}_Raw{suffix}.csv"
                         for g in (1, 2)
                         for suffix in ("EventsData", "TrackingData_Home_Team", "TrackingData_Away_Team")]
-        missing = [f for f in source_files if not f.is_file() or f.stat().st_size == 0]
-        if missing:
-            st.warning("Source data is missing or empty. Both matches need events, home tracking and away tracking before analysis can start. Download or restore the Metrica sample data at the path below.")
+        catalogue_revision = tuple((str(p.resolve()), p.stat().st_mtime_ns, p.stat().st_size)
+                                   for p in source_files + sorted(IDSSE_DATA.glob("*.xml")) + [IDSSE_MANIFEST]
+                                   if p.is_file())
+        entries = load_catalogue(catalogue_revision)
+        ready_entries = [entry for entry in entries if entry.ready]
+        metrically_complete = all(any(e.provider == "Metrica" and e.match_id == f"metrica_{g}" and e.ready
+                                      for e in entries) for g in (1, 2))
+        if not ready_entries:
+            st.warning("No validated source matches are available. Restore Metrica sample data or install and validate IDSSE data.")
             st.code(str(DATA))
-            st.write("Missing or empty files:", ", ".join(f.name for f in missing))
+            for entry in entries:
+                if entry.reason:
+                    st.caption(entry.reason)
             st.code("git clone --depth 1 https://github.com/metrica-sports/sample-data data/raw/metrica")
             st.stop()
-        game = st.selectbox("Match", [1, 2], format_func=lambda g: f"Metrica · Sample game {g}", key="selected_match")
-        team = st.selectbox("Analyze team", ["away", "home"], format_func=lambda t: f"{t.capitalize()} (anonymous)", key="selected_team")
+        if not metrically_complete:
+            missing = [f for f in source_files if not f.is_file() or f.stat().st_size == 0]
+            if missing and not any(e.provider == "IDSSE" and e.ready for e in ready_entries):
+                st.warning("Source data is missing or empty. Both Metrica matches need events, home tracking and away tracking before analysis can start. Restore the Metrica sample data at the path below.")
+                st.code(str(DATA))
+                st.write("Missing or empty files:", ", ".join(f.name for f in missing))
+                st.code("git clone --depth 1 https://github.com/metrica-sports/sample-data data/raw/metrica")
+                st.stop()
+        option_ids = [entry.match_id for entry in ready_entries]
+        previous = st.session_state.get("_previous_match_id")
+        if previous is not None and previous in option_ids and st.session_state.get("selected_match") != previous:
+            st.session_state["selected_team"] = "away"
+        selected_id = st.selectbox("Match", option_ids,
+                                   format_func=lambda match_id: next(e.display_name for e in ready_entries if e.match_id == match_id),
+                                   key="selected_match")
+        st.session_state["_previous_match_id"] = selected_id
+        selected = next(entry for entry in ready_entries if entry.match_id == selected_id)
+        team = st.selectbox("Analyze team", ["away", "home"],
+                            format_func=lambda side: selected.team_names.get(side, side.capitalize()),
+                            key="selected_team")
         st.divider()
         st.caption("POST-MATCH ANALYSIS")
         st.write("Explore the evidence. Question the explanation.")
         st.caption("Data: Metrica Sports. Teams and players are anonymized. This is a portfolio research tool.")
     engine_files = [Path(__file__)] + sorted((ROOT / "src" / "soccer_tactics").rglob("*.py"))
-    revision = tuple((str(f.resolve()), f.stat().st_mtime_ns, f.stat().st_size) for f in source_files + engine_files)
+    revision = tuple((str(f.resolve()), f.stat().st_mtime_ns, f.stat().st_size)
+                     for f in source_files + engine_files if f.is_file())
+    if selected.provider == "IDSSE":
+        try:
+            origins, score, team_names, metadata, quality = load_idsse_origin_report(
+                selected.match_id, selected.source_path, catalogue_revision)
+        except (ValueError, FileNotFoundError, ImportError) as exc:
+            st.error(f"Match analysis unavailable: {exc}")
+            st.stop()
+        st.markdown('<div class="eyebrow">SOURCE EVENT ORIGINS</div>', unsafe_allow_html=True)
+        st.title("What the source records show")
+        score_text = f"Home {score['home']} – {score['away']} Away" if score is not None else "Score unknown"
+        st.markdown(f"**{selected.display_name} · {score_text}** / {team_names[team]} perspective")
+        st.caption("IDSSE/DFL source events are shown in the unrotated source frame. These records describe event origins only.")
+        st.warning("Pass endpoints, attack direction, and event-to-tracking synchronization are unavailable. No tracking playback, xT, progression, or pass routes are shown.")
+        st.subheader("Source event origins")
+        st.dataframe(origins[origins.team == team_names[team]], hide_index=True, width="stretch")
+        st.caption("Times and event codes come from the source event records; coordinates remain in the source frame.")
+        st.subheader("Source and quality")
+        st.write("Source: IDSSE / Deutsche Fußball Liga (DFL). Bassek et al., *Scientific Data* 12, 195 (2025).")
+        st.json({"metadata": metadata, "quality": quality})
+        return
+    game = int(selected.match_id.removeprefix("metrica_"))
+    revision = catalogue_revision
     try:
         bundle = load_bundle(game, revision)
         report = load_report(game, team, revision)

@@ -17,7 +17,11 @@ The safeguards of five denominator events and three supporting events are displa
 
 ## V2 — More matches
 
-Validate the existing IDSSE loader against actual XML. Check Floodlight compatibility, orientation, period clocks, coordinate units, event semantics, team sheets, and actual sample rates. Add bundle metadata and complete goals, then run leave-one-match-out evaluation with per-match output. Do not put IDSSE into the dashboard until these checks pass. Its download is not a blocker for V1.
+The IDSSE implementation is limited to an **origin-only IDSSE catalogue**. Seven real XML matches have a recorded source-quality audit, and the dashboard exposes only origin views when all seven candidates are present in the manifest with current XML fingerprints.
+
+**V2 origin-only release completed: 2026-10-21 11:30 EDT.** The final verification passed 337 tests, validated all four real Metrica team reports, and freshly audited IDSSE at 7/7 accepted matches with 21/21 current XML fingerprints, zero errors, and an exact parsed match to the checked-in manifest. The IDSSE selector and source-origin view were manually checked in the dashboard.
+
+This release preserves IDSSE source event coordinates, timestamps, and event-code provenance. IDSSE tracking synchronization, attack direction, pass endpoints, IDSSE xT and progression, and held-out IDSSE evaluation remain deferred. Metrica retains its existing endpoint-based analysis and training. IDSSE data is attributed to the Deutsche Fußball Liga (DFL) under CC BY 4.0. Citation: Bassek et al., “An integrated dataset of spatiotemporal and event data in elite soccer,” *Scientific Data* 12, 195 (2025), [doi:10.1038/s41597-025-04505-y](https://doi.org/10.1038/s41597-025-04505-y). See the [setup and source instructions](../README.md#optional-idsse-match-catalogue) and [validation notes](VALIDATION.md).
 
 ## V3 — Question-answering agent
 

@@ -1,0 +1,762 @@
+{
+  "candidate_count": 7,
+  "candidates": [
+    {
+      "detail": "",
+      "event_exclusion_reasons": {
+        "penalty_shot_excluded": 1,
+        "unknown_pass_evaluation": 2,
+        "unsupported_event_code": 936
+      },
+      "match_id": "DFL-MAT-J03WMX",
+      "penalty_goal_count": 1,
+      "quality": {
+        "conflicting_clocks": 0,
+        "duplicate_objects": 0,
+        "event_origin_count": 901,
+        "fps": 25.0,
+        "frame_gaps": 0,
+        "missing_positions": 0,
+        "nonfinite_positions": 0,
+        "out_of_bounds": 89246,
+        "periods": [
+          1,
+          2
+        ],
+        "source_events_total": 1840,
+        "source_fps_by_period": {
+          "1": 25.0,
+          "2": 25.0
+        },
+        "source_missing_positions": 2627406,
+        "source_position_slots_total": 5984647,
+        "tracking_rows": 3357241
+      },
+      "reasons": [],
+      "scored_goals": {
+        "away": 2,
+        "home": 1
+      },
+      "source_event_codes": {
+        "BallClaiming": 29,
+        "BallDeflection": 1,
+        "Caution": 3,
+        "ChanceWithoutShot": 2,
+        "CornerKick_Play_Cross": 9,
+        "CornerKick_Play_Pass": 1,
+        "Delete": 216,
+        "FinalWhistle": 4,
+        "Foul": 19,
+        "FreeKick_Play_Cross": 1,
+        "FreeKick_Play_Pass": 19,
+        "GoalDisallowed": 1,
+        "GoalKick_Play_Pass": 14,
+        "KickOff_Play_Pass": 5,
+        "Offside": 2,
+        "OtherBallAction": 287,
+        "OtherPlayerAction": 1,
+        "OutSubstitution": 20,
+        "PenaltyNotAwarded": 2,
+        "Penalty_ShotAtGoal_SuccessfulShot": 1,
+        "Play_Cross": 20,
+        "Play_Pass": 863,
+        "PlayerNotSentOff": 3,
+        "PossessionLossBeforeGoal": 1,
+        "RefereeBall": 4,
+        "Run": 3,
+        "ShotAtGoal_BlockedShot": 4,
+        "ShotAtGoal_SavedShot": 4,
+        "ShotAtGoal_ShotWide": 9,
+        "ShotAtGoal_ShotWoodWork": 1,
+        "ShotAtGoal_SuccessfulShot": 2,
+        "SitterPrevented": 1,
+        "SpectacularPlay": 1,
+        "TacklingGame": 229,
+        "ThrowIn_Play_Cross": 3,
+        "ThrowIn_Play_Pass": 49,
+        "VideoAssistantAction": 6
+      },
+      "source_score": {
+        "away": 2,
+        "home": 1
+      },
+      "status": "accepted",
+      "supported_event_origins": {
+        "pass": 881,
+        "shot": 20
+      },
+      "team_names": {
+        "away": "FC Bayern M\u00fcnchen",
+        "home": "1. FC K\u00f6ln"
+      },
+      "xml_families": {
+        "events": 1,
+        "info": 1,
+        "positions": 1
+      }
+    },
+    {
+      "detail": "",
+      "event_exclusion_reasons": {
+        "unknown_pass_evaluation": 4,
+        "unsupported_event_code": 810
+      },
+      "match_id": "DFL-MAT-J03WN1",
+      "penalty_goal_count": 0,
+      "quality": {
+        "conflicting_clocks": 0,
+        "duplicate_objects": 0,
+        "event_origin_count": 645,
+        "fps": 25.0,
+        "frame_gaps": 0,
+        "missing_positions": 0,
+        "nonfinite_positions": 0,
+        "out_of_bounds": 85834,
+        "periods": [
+          1,
+          2
+        ],
+        "source_events_total": 1459,
+        "source_fps_by_period": {
+          "1": 25.0,
+          "2": 25.0
+        },
+        "source_missing_positions": 2679043,
+        "source_position_slots_total": 5804001,
+        "tracking_rows": 3124958
+      },
+      "reasons": [],
+      "scored_goals": {
+        "away": 0,
+        "home": 3
+      },
+      "source_event_codes": {
+        "BallClaiming": 23,
+        "BallDeflection": 1,
+        "Caution": 11,
+        "CautionTeamofficial": 2,
+        "ChanceWithoutShot": 4,
+        "CornerKick_Play_Cross": 7,
+        "Delete": 166,
+        "FinalWhistle": 4,
+        "Foul": 24,
+        "FreeKick_Play_Cross": 3,
+        "FreeKick_Play_Pass": 23,
+        "FreeKick_ShotAtGoal_BlockedShot": 1,
+        "GoalKick_Play_Pass": 16,
+        "KickOff_Play_Pass": 5,
+        "Offside": 3,
+        "OtherBallAction": 247,
+        "OutSubstitution": 14,
+        "PenaltyNotAwarded": 4,
+        "Play_Cross": 17,
+        "Play_Pass": 612,
+        "PlayerNotSentOff": 2,
+        "PossessionLossBeforeGoal": 1,
+        "RefereeBall": 6,
+        "ShotAtGoal_BlockedShot": 5,
+        "ShotAtGoal_SavedShot": 4,
+        "ShotAtGoal_ShotWide": 7,
+        "ShotAtGoal_ShotWoodWork": 1,
+        "ShotAtGoal_SuccessfulShot": 3,
+        "SpectacularPlay": 2,
+        "TacklingGame": 193,
+        "ThrowIn": 1,
+        "ThrowIn_Play_Cross": 5,
+        "ThrowIn_Play_Pass": 40,
+        "VideoAssistantAction": 2
+      },
+      "source_score": {
+        "away": 0,
+        "home": 3
+      },
+      "status": "accepted",
+      "supported_event_origins": {
+        "pass": 625,
+        "shot": 20
+      },
+      "team_names": {
+        "away": "Bayer 04 Leverkusen",
+        "home": "VfL Bochum 1848"
+      },
+      "xml_families": {
+        "events": 1,
+        "info": 1,
+        "positions": 1
+      }
+    },
+    {
+      "detail": "",
+      "event_exclusion_reasons": {
+        "penalty_shot_excluded": 1,
+        "unknown_pass_evaluation": 7,
+        "unsupported_event_code": 763
+      },
+      "match_id": "DFL-MAT-J03WOH",
+      "penalty_goal_count": 1,
+      "quality": {
+        "conflicting_clocks": 0,
+        "duplicate_objects": 0,
+        "event_origin_count": 686,
+        "fps": 25.0,
+        "frame_gaps": 0,
+        "missing_positions": 0,
+        "nonfinite_positions": 0,
+        "out_of_bounds": 76737,
+        "periods": [
+          1,
+          2
+        ],
+        "source_events_total": 1457,
+        "source_fps_by_period": {
+          "1": 25.0,
+          "2": 25.0
+        },
+        "source_missing_positions": 2332638,
+        "source_position_slots_total": 5488560,
+        "tracking_rows": 3155922
+      },
+      "reasons": [],
+      "scored_goals": {
+        "away": 0,
+        "home": 4
+      },
+      "source_event_codes": {
+        "BallClaiming": 48,
+        "Caution": 5,
+        "ChanceWithoutShot": 2,
+        "CornerKick_Play_Cross": 6,
+        "Delete": 104,
+        "FinalWhistle": 4,
+        "Foul": 31,
+        "FreeKick_Play_Cross": 4,
+        "FreeKick_Play_Pass": 28,
+        "GoalKick_Play_Pass": 17,
+        "KickOff_Play_Pass": 6,
+        "Nutmeg": 4,
+        "Offside": 3,
+        "OtherBallAction": 228,
+        "OtherPlayerAction": 1,
+        "OutSubstitution": 20,
+        "PenaltyNotAwarded": 3,
+        "Penalty_ShotAtGoal_SuccessfulShot": 1,
+        "Play_Cross": 20,
+        "Play_Pass": 647,
+        "PossessionLossBeforeGoal": 3,
+        "RefereeBall": 4,
+        "Run": 2,
+        "ShotAtGoal_BlockedShot": 6,
+        "ShotAtGoal_OtherShot": 2,
+        "ShotAtGoal_SavedShot": 7,
+        "ShotAtGoal_ShotWide": 8,
+        "ShotAtGoal_SuccessfulShot": 3,
+        "SitterPrevented": 1,
+        "SpectacularPlay": 1,
+        "TacklingGame": 198,
+        "ThrowIn_Play_Cross": 1,
+        "ThrowIn_Play_Pass": 35,
+        "VideoAssistantAction": 4
+      },
+      "source_score": {
+        "away": 0,
+        "home": 4
+      },
+      "status": "accepted",
+      "supported_event_origins": {
+        "pass": 660,
+        "shot": 26
+      },
+      "team_names": {
+        "away": "SSV Jahn Regensburg",
+        "home": "Fortuna D\u00fcsseldorf"
+      },
+      "xml_families": {
+        "events": 1,
+        "info": 1,
+        "positions": 1
+      }
+    },
+    {
+      "detail": "",
+      "event_exclusion_reasons": {
+        "unsupported_event_code": 797
+      },
+      "match_id": "DFL-MAT-J03WOY",
+      "penalty_goal_count": 0,
+      "quality": {
+        "conflicting_clocks": 0,
+        "duplicate_objects": 0,
+        "event_origin_count": 781,
+        "fps": 25.0,
+        "frame_gaps": 0,
+        "missing_positions": 0,
+        "nonfinite_positions": 0,
+        "out_of_bounds": 73723,
+        "periods": [
+          1,
+          2
+        ],
+        "source_events_total": 1578,
+        "source_fps_by_period": {
+          "1": 25.0,
+          "2": 25.0
+        },
+        "source_missing_positions": 2565648,
+        "source_position_slots_total": 5843976,
+        "tracking_rows": 3278328
+      },
+      "reasons": [],
+      "scored_goals": {
+        "away": 1,
+        "home": 3
+      },
+      "source_event_codes": {
+        "BallClaiming": 24,
+        "Caution": 2,
+        "CornerKick_Play_Cross": 2,
+        "Delete": 150,
+        "FinalWhistle": 4,
+        "Foul": 24,
+        "FreeKick_Play_Cross": 1,
+        "FreeKick_Play_Pass": 25,
+        "FreeKick_ShotAtGoal_SavedShot": 1,
+        "GoalKick_Play_Pass": 19,
+        "KickOff_Play_Pass": 6,
+        "Nutmeg": 4,
+        "Offside": 3,
+        "OtherBallAction": 248,
+        "OutSubstitution": 20,
+        "PenaltyNotAwarded": 4,
+        "Play_Cross": 17,
+        "Play_Pass": 743,
+        "PlayerNotSentOff": 1,
+        "PossessionLossBeforeGoal": 2,
+        "RefereeBall": 4,
+        "Run": 1,
+        "ShotAtGoal_BlockedShot": 3,
+        "ShotAtGoal_OtherShot": 1,
+        "ShotAtGoal_SavedShot": 2,
+        "ShotAtGoal_ShotWide": 11,
+        "ShotAtGoal_SuccessfulShot": 4,
+        "SpectacularPlay": 3,
+        "TacklingGame": 195,
+        "ThrowIn_Play_Cross": 2,
+        "ThrowIn_Play_Pass": 52
+      },
+      "source_score": {
+        "away": 1,
+        "home": 3
+      },
+      "status": "accepted",
+      "supported_event_origins": {
+        "pass": 760,
+        "shot": 21
+      },
+      "team_names": {
+        "away": "F.C. Hansa Rostock",
+        "home": "Fortuna D\u00fcsseldorf"
+      },
+      "xml_families": {
+        "events": 1,
+        "info": 1,
+        "positions": 1
+      }
+    },
+    {
+      "detail": "",
+      "event_exclusion_reasons": {
+        "unknown_pass_evaluation": 2,
+        "unsupported_event_code": 755
+      },
+      "match_id": "DFL-MAT-J03WPY",
+      "penalty_goal_count": 0,
+      "quality": {
+        "conflicting_clocks": 0,
+        "duplicate_objects": 0,
+        "event_origin_count": 822,
+        "fps": 25.0,
+        "frame_gaps": 0,
+        "missing_positions": 0,
+        "nonfinite_positions": 0,
+        "out_of_bounds": 69040,
+        "periods": [
+          1,
+          2
+        ],
+        "source_events_total": 1579,
+        "source_fps_by_period": {
+          "1": 25.0,
+          "2": 25.0
+        },
+        "source_missing_positions": 2631798,
+        "source_position_slots_total": 5994651,
+        "tracking_rows": 3362853
+      },
+      "reasons": [],
+      "scored_goals": {
+        "away": 1,
+        "home": 0
+      },
+      "source_event_codes": {
+        "BallClaiming": 12,
+        "BallDeflection": 1,
+        "Caution": 9,
+        "CornerKick_Play_Cross": 9,
+        "CornerKick_Play_Pass": 2,
+        "Delete": 120,
+        "FairPlay": 2,
+        "FinalWhistle": 4,
+        "Foul": 18,
+        "FreeKick_Play_Cross": 1,
+        "FreeKick_Play_Pass": 19,
+        "GoalKick_Play_Pass": 18,
+        "KickOff_Play_Pass": 3,
+        "Nutmeg": 2,
+        "Offside": 2,
+        "OtherBallAction": 252,
+        "OutSubstitution": 18,
+        "PenaltyNotAwarded": 2,
+        "Play_Cross": 20,
+        "Play_Pass": 778,
+        "PossessionLossBeforeGoal": 1,
+        "RefereeBall": 8,
+        "Run": 1,
+        "ShotAtGoal_BlockedShot": 8,
+        "ShotAtGoal_OtherShot": 1,
+        "ShotAtGoal_SavedShot": 5,
+        "ShotAtGoal_ShotWide": 11,
+        "ShotAtGoal_SuccessfulShot": 1,
+        "SpectacularPlay": 2,
+        "TacklingGame": 208,
+        "ThrowIn_Play_Cross": 3,
+        "ThrowIn_Play_Pass": 38
+      },
+      "source_score": {
+        "away": 1,
+        "home": 0
+      },
+      "status": "accepted",
+      "supported_event_origins": {
+        "pass": 796,
+        "shot": 26
+      },
+      "team_names": {
+        "away": "1. FC N\u00fcrnberg",
+        "home": "Fortuna D\u00fcsseldorf"
+      },
+      "xml_families": {
+        "events": 1,
+        "info": 1,
+        "positions": 1
+      }
+    },
+    {
+      "detail": "",
+      "event_exclusion_reasons": {
+        "unknown_pass_evaluation": 2,
+        "unsupported_event_code": 824
+      },
+      "match_id": "DFL-MAT-J03WQQ",
+      "penalty_goal_count": 0,
+      "quality": {
+        "conflicting_clocks": 0,
+        "duplicate_objects": 0,
+        "event_origin_count": 853,
+        "fps": 25.0,
+        "frame_gaps": 0,
+        "missing_positions": 0,
+        "nonfinite_positions": 0,
+        "out_of_bounds": 46405,
+        "periods": [
+          1,
+          2
+        ],
+        "source_events_total": 1679,
+        "source_fps_by_period": {
+          "1": 25.0,
+          "2": 25.0
+        },
+        "source_missing_positions": 2615199,
+        "source_position_slots_total": 5836145,
+        "tracking_rows": 3220946
+      },
+      "reasons": [],
+      "scored_goals": {
+        "away": 0,
+        "home": 1
+      },
+      "source_event_codes": {
+        "BallClaiming": 28,
+        "Caution": 4,
+        "ChanceWithoutShot": 1,
+        "CornerKick_Play_Cross": 14,
+        "CornerKick_Play_Pass": 1,
+        "Delete": 160,
+        "FairPlay": 1,
+        "FinalWhistle": 4,
+        "Foul": 19,
+        "FreeKick_Play_Cross": 1,
+        "FreeKick_Play_Pass": 18,
+        "FreeKick_ShotAtGoal_BlockedShot": 1,
+        "GoalKick_Play_Pass": 18,
+        "KickOff_Play_Pass": 3,
+        "Nutmeg": 4,
+        "Offside": 1,
+        "OtherBallAction": 264,
+        "OutSubstitution": 18,
+        "PenaltyNotAwarded": 1,
+        "Play_Cross": 26,
+        "Play_Pass": 803,
+        "RefereeBall": 2,
+        "ShotAtGoal_BlockedShot": 6,
+        "ShotAtGoal_SavedShot": 11,
+        "ShotAtGoal_ShotWide": 8,
+        "ShotAtGoal_SuccessfulShot": 1,
+        "SpectacularPlay": 1,
+        "TacklingGame": 216,
+        "ThrowIn": 1,
+        "ThrowIn_Play_Cross": 5,
+        "ThrowIn_Play_Pass": 36,
+        "VideoAssistantAction": 2
+      },
+      "source_score": {
+        "away": 0,
+        "home": 1
+      },
+      "status": "accepted",
+      "supported_event_origins": {
+        "pass": 827,
+        "shot": 26
+      },
+      "team_names": {
+        "away": "FC St. Pauli",
+        "home": "Fortuna D\u00fcsseldorf"
+      },
+      "xml_families": {
+        "events": 1,
+        "info": 1,
+        "positions": 1
+      }
+    },
+    {
+      "detail": "",
+      "event_exclusion_reasons": {
+        "penalty_shot_excluded": 1,
+        "unknown_pass_evaluation": 3,
+        "unsupported_event_code": 704
+      },
+      "match_id": "DFL-MAT-J03WR9",
+      "penalty_goal_count": 1,
+      "quality": {
+        "conflicting_clocks": 0,
+        "duplicate_objects": 0,
+        "event_origin_count": 837,
+        "fps": 25.0,
+        "frame_gaps": 0,
+        "missing_positions": 0,
+        "nonfinite_positions": 0,
+        "out_of_bounds": 73395,
+        "periods": [
+          1,
+          2
+        ],
+        "source_events_total": 1545,
+        "source_fps_by_period": {
+          "1": 25.0,
+          "2": 25.0
+        },
+        "source_missing_positions": 2642580,
+        "source_position_slots_total": 6019210,
+        "tracking_rows": 3376630
+      },
+      "reasons": [],
+      "scored_goals": {
+        "away": 2,
+        "home": 1
+      },
+      "source_event_codes": {
+        "BallClaiming": 42,
+        "BallDeflection": 1,
+        "Caution": 3,
+        "CornerKick_Play_Cross": 6,
+        "Delete": 158,
+        "FairPlay": 2,
+        "FinalWhistle": 4,
+        "Foul": 25,
+        "FreeKick_Play_Cross": 1,
+        "FreeKick_Play_Pass": 24,
+        "FreeKick_ShotAtGoal_ShotWide": 1,
+        "GoalKick_Play_Pass": 17,
+        "KickOff_Play_Pass": 4,
+        "Nutmeg": 2,
+        "Offside": 2,
+        "OtherBallAction": 173,
+        "OutSubstitution": 18,
+        "PenaltyNotAwarded": 2,
+        "Penalty_ShotAtGoal_SuccessfulShot": 1,
+        "Play_Cross": 20,
+        "Play_Pass": 795,
+        "RefereeBall": 2,
+        "Run": 1,
+        "ShotAtGoal_BlockedShot": 5,
+        "ShotAtGoal_SavedShot": 8,
+        "ShotAtGoal_ShotWide": 9,
+        "ShotAtGoal_ShotWoodWork": 1,
+        "ShotAtGoal_SuccessfulShot": 2,
+        "SpectacularPlay": 2,
+        "TacklingGame": 173,
+        "ThrowIn": 1,
+        "ThrowIn_Play_Cross": 5,
+        "ThrowIn_Play_Pass": 31,
+        "VideoAssistantAction": 4
+      },
+      "source_score": {
+        "away": 2,
+        "home": 1
+      },
+      "status": "accepted",
+      "supported_event_origins": {
+        "pass": 812,
+        "shot": 25
+      },
+      "team_names": {
+        "away": "1. FC Kaiserslautern",
+        "home": "Fortuna D\u00fcsseldorf"
+      },
+      "xml_families": {
+        "events": 1,
+        "info": 1,
+        "positions": 1
+      }
+    }
+  ],
+  "errors": [],
+  "limitations": {
+    "attack_direction": "not_established",
+    "pass_endpoints": "unavailable",
+    "tracking_sync": "not_validated"
+  },
+  "memory": {
+    "metric": "peak traced Python allocations during one bundle load; rounded up to 64 MiB, excludes native NumPy allocations",
+    "peak_python_mib_upper_bound": 1600
+  },
+  "readiness_scope": "source_event_origins_only",
+  "schema_version": "idsse-source-quality-v1",
+  "source": {
+    "credit": "Deutsche Fu\u00dfball Liga (DFL)",
+    "dataset_url": "https://github.com/spoho-datascience/idsse-data",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "paper": "Bassek et al., An integrated dataset of spatiotemporal and event data in elite soccer, Scientific Data 12, 195 (2025)",
+    "paper_url": "https://doi.org/10.1038/s41597-025-04505-y",
+    "provider": "IDSSE/DFL"
+  },
+  "source_fingerprints": [
+    {
+      "mtime_ns": 1792530082779909800,
+      "relative_name": "DFL_02_01_matchinformation_DFL-COM-000001_DFL-MAT-J03WMX.xml",
+      "size_bytes": 11930
+    },
+    {
+      "mtime_ns": 1792530082782432300,
+      "relative_name": "DFL_02_01_matchinformation_DFL-COM-000001_DFL-MAT-J03WN1.xml",
+      "size_bytes": 11722
+    },
+    {
+      "mtime_ns": 1792530082785432700,
+      "relative_name": "DFL_02_01_matchinformation_DFL-COM-000002_DFL-MAT-J03WOH.xml",
+      "size_bytes": 11745
+    },
+    {
+      "mtime_ns": 1792530082788432900,
+      "relative_name": "DFL_02_01_matchinformation_DFL-COM-000002_DFL-MAT-J03WOY.xml",
+      "size_bytes": 11952
+    },
+    {
+      "mtime_ns": 1792530082790470600,
+      "relative_name": "DFL_02_01_matchinformation_DFL-COM-000002_DFL-MAT-J03WPY.xml",
+      "size_bytes": 11922
+    },
+    {
+      "mtime_ns": 1792530082792478200,
+      "relative_name": "DFL_02_01_matchinformation_DFL-COM-000002_DFL-MAT-J03WQQ.xml",
+      "size_bytes": 11932
+    },
+    {
+      "mtime_ns": 1792530082796479000,
+      "relative_name": "DFL_02_01_matchinformation_DFL-COM-000002_DFL-MAT-J03WR9.xml",
+      "size_bytes": 11823
+    },
+    {
+      "mtime_ns": 1792530082803501100,
+      "relative_name": "DFL_03_02_events_raw_DFL-COM-000001_DFL-MAT-J03WMX.xml",
+      "size_bytes": 776578
+    },
+    {
+      "mtime_ns": 1792530082811516900,
+      "relative_name": "DFL_03_02_events_raw_DFL-COM-000001_DFL-MAT-J03WN1.xml",
+      "size_bytes": 612114
+    },
+    {
+      "mtime_ns": 1792530082818520900,
+      "relative_name": "DFL_03_02_events_raw_DFL-COM-000002_DFL-MAT-J03WOH.xml",
+      "size_bytes": 635747
+    },
+    {
+      "mtime_ns": 1792530082825539800,
+      "relative_name": "DFL_03_02_events_raw_DFL-COM-000002_DFL-MAT-J03WOY.xml",
+      "size_bytes": 683018
+    },
+    {
+      "mtime_ns": 1792530082832557600,
+      "relative_name": "DFL_03_02_events_raw_DFL-COM-000002_DFL-MAT-J03WPY.xml",
+      "size_bytes": 698898
+    },
+    {
+      "mtime_ns": 1792530082839556700,
+      "relative_name": "DFL_03_02_events_raw_DFL-COM-000002_DFL-MAT-J03WQQ.xml",
+      "size_bytes": 732186
+    },
+    {
+      "mtime_ns": 1792530082846580700,
+      "relative_name": "DFL_03_02_events_raw_DFL-COM-000002_DFL-MAT-J03WR9.xml",
+      "size_bytes": 681050
+    },
+    {
+      "mtime_ns": 1792530084955539900,
+      "relative_name": "DFL_04_03_positions_raw_observed_DFL-COM-000001_DFL-MAT-J03WMX.xml",
+      "size_bytes": 418524833
+    },
+    {
+      "mtime_ns": 1792530086958426200,
+      "relative_name": "DFL_04_03_positions_raw_observed_DFL-COM-000001_DFL-MAT-J03WN1.xml",
+      "size_bytes": 391722803
+    },
+    {
+      "mtime_ns": 1792530072578142900,
+      "relative_name": "DFL_04_03_positions_raw_observed_DFL-COM-000002_DFL-MAT-J03WOH.xml",
+      "size_bytes": 348945715
+    },
+    {
+      "mtime_ns": 1792530074532443100,
+      "relative_name": "DFL_04_03_positions_raw_observed_DFL-COM-000002_DFL-MAT-J03WOY.xml",
+      "size_bytes": 362567859
+    },
+    {
+      "mtime_ns": 1792530076467168500,
+      "relative_name": "DFL_04_03_positions_raw_observed_DFL-COM-000002_DFL-MAT-J03WPY.xml",
+      "size_bytes": 371688499
+    },
+    {
+      "mtime_ns": 1792530078296584800,
+      "relative_name": "DFL_04_03_positions_raw_observed_DFL-COM-000002_DFL-MAT-J03WQQ.xml",
+      "size_bytes": 356219423
+    },
+    {
+      "mtime_ns": 1792530080195711200,
+      "relative_name": "DFL_04_03_positions_raw_observed_DFL-COM-000002_DFL-MAT-J03WR9.xml",
+      "size_bytes": 372934140
+    }
+  ],
+  "source_position_slot_semantics": "Observed-frame XY slots across every source object column, including roster slots never observed; not active-player detections."
+}

@@ -15,6 +15,15 @@ The [featured analysis](docs/demo/featured-analysis.md) examines game 1's anonym
 
 [Watch the 80-second edited browser walkthrough](docs/demo/walkthrough.mp4). See [capture notes and attribution](docs/demo/README.md) and [release validation](docs/VALIDATION.md).
 
+## Roadmap
+
+- **V1 — Complete (October 20, 2026):** the local Metrica-based analysis dashboard, evidence views and portfolio demo.
+- **V2 — Complete (October 21, 2026):** seven audited IDSSE matches in an origin-only catalogue; synchronization, attack direction, pass endpoints and IDSSE xT/progression remain deferred.
+- **Next:** evidence-backed question answering, followed by richer tactical analysis.
+- **Later:** derive tracking from recorded video, then work toward live analysis.
+
+See the [full roadmap](docs/ROADMAP.md) for scope and validation details.
+
 ## Windows setup
 
 Install Python 3.12 and Git. In PowerShell, from this repository:
@@ -28,6 +37,19 @@ git clone --depth 1 https://github.com/metrica-sports/sample-data.git data/raw/m
 ```
 
 The data clone supplies `data/raw/metrica/data/Sample_Game_1` and `Sample_Game_2`; keep these external source CSVs out of Git. If that data directory already exists, reuse the complete local clone. `requirements-demo.txt` pins tested direct dependencies; it is **not a transitive lockfile**. The `demo` extra supplies media tooling and is included to reproduce this environment. No account or API key is required.
+
+### Optional IDSSE match catalogue
+
+IDSSE support uses the optional Floodlight parser. Download the seven match XML triplets from the [public IDSSE dataset record](https://api.figshare.com/v2/articles/28196177) and place the `matchinformation`, `events_raw`, and `positions_raw_observed` XML files together under the external `data/raw/idsse` directory. Keep all raw XML outside Git; `data/raw/` is ignored. From the repository root, install the parser and generate the source-quality manifest with:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[idsse]"
+.\.venv\Scripts\python.exe scripts/validate_idsse.py --data-root data/raw/idsse --output docs/validation/idsse-v1.json
+```
+
+The IDSSE selector requires a valid manifest covering all seven discovered matches and current fingerprints for every XML file. Only candidates that pass the source event-origin quality gate are selectable; rejected candidates remain excluded with their reasons recorded in the manifest. Changing, adding, or removing XML files requires regenerating the manifest. The origin-only findings retain source coordinates, timestamps, and event-code provenance. They do not establish tracking synchronization or attack direction; pass endpoints remain unknown, so IDSSE xT and progression are unavailable. No held-out IDSSE evaluation is claimed. See [validation notes](docs/VALIDATION.md) for the recorded audit and its limits.
+
+IDSSE data is attributed to the **Deutsche Fußball Liga (DFL)** under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Paper citation: Bassek et al., “An integrated dataset of spatiotemporal and event data in elite soccer,” *Scientific Data* 12, 195 (2025), [doi:10.1038/s41597-025-04505-y](https://doi.org/10.1038/s41597-025-04505-y). The dataset and this project’s derived use remain subject to the linked source terms.
 
 Launch:
 

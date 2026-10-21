@@ -8,6 +8,7 @@ import pandas as pd
 from soccer_tactics.analytics.impact import pass_values, player_impact
 from soccer_tactics.analytics.xt import attacking, fit_xt
 from soccer_tactics.match import MatchBundle, validate_bundle
+from soccer_tactics.schema import validate_events
 
 CHANNELS = ("right", "centre", "left")  # y increases toward the attacking team's left
 LIMITATIONS = [
@@ -67,6 +68,14 @@ class MatchReport:
     limitations: list[str]
 
 
+@dataclass
+class TrainingMatch:
+    """Canonical events and identity needed to train xT without tracking frames."""
+    match_id: str
+    source: str
+    events: pd.DataFrame
+
+
 def channel(y) -> np.ndarray:
     return np.asarray(CHANNELS)[np.digitize(np.asarray(y, float), [-68 / 6, 68 / 6])]
 
@@ -82,19 +91,37 @@ def _evidence(rows: pd.DataFrame, metric: str | None = None) -> list[Evidence]:
     return [Evidence(**{k: row[k] for k in Evidence.__dataclass_fields__}) for row in selected.to_dict("records")]
 
 
-def analyze_match(match_bundle: MatchBundle, team: str, training_matches: Iterable[MatchBundle]) -> MatchReport:
+def analyze_match(match_bundle: MatchBundle, team: str,
+                  training_matches: Iterable[MatchBundle | TrainingMatch]) -> MatchReport:
     if team not in {"home", "away"}:
         raise ValueError("team must be home or away")
     bundle = match_bundle
+    if bundle.metadata.get("event_capabilities", {}).get("pass_endpoints") is False:
+        raise ValueError("origin-only events cannot enter endpoint-based match analysis")
     validate_bundle(bundle)
-    training = list(training_matches)
-    if not training:
+    training_events = []
+    training_match_ids = []
+    seen_ids = {str(bundle.match_id)}
+    for other in training_matches:
+        if isinstance(other, MatchBundle):
+            validate_bundle(other)
+        elif not isinstance(other, TrainingMatch):
+            raise TypeError("training matches must be MatchBundle or TrainingMatch")
+        validate_events(other.events)
+        if other.events.empty:
+            raise ValueError("training events cannot be empty")
+        if other.events.match_id.isna().any() or set(other.events.match_id.astype(str)) != {str(other.match_id)}:
+            raise ValueError("training events contain a different match from the declared match")
+        if str(other.match_id) in seen_ids:
+            raise ValueError("held-out match cannot be used for xT training, and training match IDs must be distinct")
+        if other.source != bundle.source:
+            raise ValueError("xT training source must match the selected match source")
+        seen_ids.add(str(other.match_id))
+        training_match_ids.append(other.match_id)
+        training_events.append(other.events)
+    if not training_events:
         raise ValueError("at least one other training match is required")
-    for other in training:
-        validate_bundle(other)
-        if str(other.match_id) == str(bundle.match_id):
-            raise ValueError("held-out match cannot be used for xT training")
-    grid = fit_xt(pd.concat([other.events for other in training], ignore_index=True))
+    grid = fit_xt(pd.concat(training_events, ignore_index=True))
     events = bundle.events.reset_index(drop=True).copy()
     events["event_id"] = [f"{bundle.match_id}:{int(row.period)}:{int(row.frame)}:{i}" for i, row in events.iterrows()]
     passes = pass_values(events, grid, bundle.tracking)
@@ -189,7 +216,7 @@ def analyze_match(match_bundle: MatchBundle, team: str, training_matches: Iterab
     return MatchReport(
         bundle.match_id, team, score, outcome, bundle.goals.copy(), pd.DataFrame(comparisons),
         channels, players[players.team == team].copy(), passes, findings,
-        {"source": bundle.source, "training_match_ids": [other.match_id for other in training],
+        {"source": bundle.source, "training_match_ids": training_match_ids,
          "fps": bundle.fps, "quality": bundle.quality, "xt_grid": grid.tolist()},
         LIMITATIONS.copy(),
     )

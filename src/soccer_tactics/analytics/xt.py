@@ -128,6 +128,7 @@ def add_xt(events: pd.DataFrame, grid: np.ndarray) -> pd.DataFrame:
 
     A completed pass gains xT(end) - xT(start). A failed pass loses xT(start): the value of the
     possession that was thrown away."""
+    validate_events(events)
     e = events.copy()
     a = attacking(e)
     mv = (e["event"] == "pass").to_numpy()

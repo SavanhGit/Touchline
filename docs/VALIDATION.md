@@ -36,6 +36,27 @@ These are sanity checks on two matches, not predictive benchmarks. Pass endpoint
 
 The xT validation script previously labeled an already-smoothed fit as raw. It now passes `smooth=0` explicitly before comparing smoothing levels.
 
+## IDSSE source-origin catalogue (Task 4 audit)
+
+The recorded real-data audit at `data/raw/idsse` accepted **7/7 matches** for source event-origin views and fingerprinted **21/21 XML files** (three file families per match). Every source score matched the complete scored-goal records, and the audit had no manifest errors or candidate rejection reasons. The machine-readable output is [`docs/validation/idsse-v1.json`](validation/idsse-v1.json). On 2026-10-21, a fresh controller audit again accepted 7/7 with 21/21 fingerprints, zero errors, and an exact parsed match to this checked-in manifest. Final Metrica release validation confirmed all four real team reports. The full suite passed **337 tests**. The dashboard's IDSSE selector and origin-only view were manually inspected.
+
+The catalogue fails closed unless all seven manifest candidate IDs match all seven discovered XML matches and every XML file has its current fingerprint. Only accepted candidates can appear. The readiness scope is source event origins. IDSSE evidence carries source coordinates, timestamps, and event-code provenance; **tracking synchronization, attack direction, pass endpoints, IDSSE xT, progression, and held-out IDSSE evaluation remain deferred**. IDSSE tracking is audited for source structure, not shown as synchronized playback. Metrica endpoint reports and training remain unchanged.
+
+Audit quality details: each period had a 25 Hz sampling estimate; source exclusions were counted by reason, including unsupported event codes, unknown pass evaluations, and three excluded penalty shots. `source_missing_positions` counts missing/nonfinite XY slots across all source object columns at observed frames, including roster slots never observed. It does not count missed active-player detections and must not be presented as player visibility or tracking coverage.
+
+Peak memory is reported as **1600 MiB**, rounded up to the next 64 MiB, for the peak traced Python allocation upper bound. Native NumPy allocations and total process RSS are outside this measurement, so this is not a process-memory ceiling.
+
+The source is the Deutsche Fußball Liga (DFL) IDSSE dataset, licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Citation: Bassek et al., “An integrated dataset of spatiotemporal and event data in elite soccer,” *Scientific Data* 12, 195 (2025), [doi:10.1038/s41597-025-04505-y](https://doi.org/10.1038/s41597-025-04505-y). Keep the raw XML in the ignored `data/raw/idsse` directory, outside Git.
+
+Reproduce the IDSSE audit and focused documentation/release checks from the repository root in PowerShell:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/validate_idsse.py --data-root data/raw/idsse --output docs/validation/idsse-v1.json
+.\.venv\Scripts\python.exe -m pytest tests/test_roadmap.py tests/test_release_validation.py -q
+```
+
+Task 4's focused validator tests passed **31 tests** after the final review fixes; Task 5's focused catalogue/dashboard tests passed **26 tests**. The final origin-only V2 release checks completed on 2026-10-21; broader IDSSE synchronization, attack direction, endpoints, xT/progression, and held-out evaluation remain deferred.
+
 ## Reproduce
 
 From the repository root in PowerShell, after installing dependencies and downloading the data:

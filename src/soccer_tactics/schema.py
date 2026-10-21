@@ -70,8 +70,9 @@ def orient(df: pd.DataFrame) -> pd.DataFrame:
     return flip_periods(df, attack_flips(df), ["x", "y"])
 
 
-# Events: one row per pass or shot. Same units and orientation as tracking, so after orient the
-# home team attacks +x and the away team attacks -x. `success` means a completed pass, or a goal.
+# Canonical endpoint events used by Metrica analytics. IDSSE source origin rows
+# stay outside this table because their endpoints and attack direction are unknown.
+# `success` means a completed pass, or a goal.
 EVENT_COLUMNS = [
     "match_id", "period", "team", "event", "success", "player_id", "receiver_id",
     "frame", "time_s", "x0", "y0", "x1", "y1",
@@ -79,7 +80,7 @@ EVENT_COLUMNS = [
 EVENTS = ("pass", "shot", "tackle", "interception", "recovery")
 
 
-def validate_events(df: pd.DataFrame) -> pd.DataFrame:
+def validate_events(df: pd.DataFrame, *, require_pass_endpoints: bool = True) -> pd.DataFrame:
     missing = [c for c in EVENT_COLUMNS if c not in df.columns]
     if missing:
         raise ValueError(f"missing columns: {missing}")
@@ -91,5 +92,6 @@ def validate_events(df: pd.DataFrame) -> pd.DataFrame:
         raise ValueError(f"unknown event team labels: {bad}")
     _validate_identity(df)
     _require_finite(df, ["x0", "y0"], "event origins")
-    _require_finite(df.loc[df["event"] == "pass"], ["x1", "y1"], "pass endpoints")
+    if require_pass_endpoints:
+        _require_finite(df.loc[df["event"] == "pass"], ["x1", "y1"], "pass endpoints")
     return df[EVENT_COLUMNS]

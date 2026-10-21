@@ -18,6 +18,8 @@ class MatchBundle:
     score_known: bool = False
     team_names: dict = field(default_factory=lambda: {"home": "Home (anonymous)", "away": "Away (anonymous)"})
     quality: dict = field(default_factory=dict)
+    metadata: dict = field(default_factory=dict)
+    event_origins: pd.DataFrame = field(default_factory=pd.DataFrame)
 
     @property
     def score(self) -> dict | None:
@@ -34,6 +36,24 @@ def validate_bundle(bundle: MatchBundle) -> None:
     """
     validate(bundle.tracking)
     validate_events(bundle.events)
+    if not bundle.event_origins.empty:
+        origins = bundle.event_origins
+        required_origin = {"match_id", "period", "team", "event", "player_id", "source_code",
+                           "source_timestamp", "gameclock_s", "source_x_m", "source_y_m", "x_m", "y_m"}
+        missing_origin = required_origin - set(origins)
+        if missing_origin:
+            raise ValueError(f"event origins missing columns: {sorted(missing_origin)}")
+        if {"frame", "x1", "y1", "to_x", "to_y"} & set(origins):
+            raise ValueError("event origins cannot claim tracking frames or destinations")
+        if set(origins.match_id.astype(str)) != {str(bundle.match_id)}:
+            raise ValueError("event origins contain a different match from the declared match")
+        if not origins.team.isin(["home", "away"]).all():
+            raise ValueError("event origins must have team home or away")
+        if pd.to_datetime(origins.source_timestamp, utc=True, errors="coerce",
+                          format="ISO8601").isna().any():
+            raise ValueError("event origins must have valid source timestamps")
+        if not np.isfinite(origins[["period", "gameclock_s", "source_x_m", "source_y_m", "x_m", "y_m"]].to_numpy(dtype=float)).all():
+            raise ValueError("event origins must have finite periods, clocks, and coordinates")
     if bundle.tracking.empty:
         raise ValueError("empty tracking cannot form a match report")
     for label, rows in (("tracking", bundle.tracking), ("events", bundle.events)):
