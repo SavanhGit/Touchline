@@ -1,4 +1,4 @@
-"""Validate all four real team reports and export source-checked artifacts."""
+"""Validate all six real team reports and export source-checked artifacts."""
 import json
 import math
 from dataclasses import asdict
@@ -182,7 +182,7 @@ def _featured_markdown(featured: dict) -> str:
     lines = ["# Featured analysis: Metrica game 1, away team", "",
              f"{score_text} {result_text}", "",
              "These patterns may have contributed; this report does not establish causation or promise that a suggested change would alter the result.", "",
-             "xT is trained on game 2 only. Teams and player IDs are anonymous. Data: [Metrica Sports](https://github.com/metrica-sports/sample-data).", ""]
+             "xT is trained on games 2 and 3 only. Teams and player IDs are anonymous. Data: [Metrica Sports](https://github.com/metrica-sports/sample-data).", ""]
     for finding in featured["findings"]:
         lines += [f"## {finding['title']}", "", finding["observation"], "",
                   f"**Adjustment to investigate:** {finding['suggestion']}", "",
@@ -193,56 +193,202 @@ def _featured_markdown(featured: dict) -> str:
             lines.append(f"| {e['event_id']} | {e['period']} | {e['frame']} | {e['time_s']:.2f} | {e['player_id']} |")
         lines.append("")
     lines += ["## Verification and interpretation", "",
-              f"The source audit compared all displayed event fields, including type, player, team, period, source seconds and coordinates, with the original event CSV. Event-to-player tracking coverage is {coverage_text}; median event alignment is {median_text} and p90 alignment is {p90_text}. See `release-validation.json` for all four team reports and measured quality results.", "",
+              f"The source audit compared all displayed event fields, including type, player, team, period, source seconds and coordinates, with the original event source. Event-to-player tracking coverage is {coverage_text}; median event alignment is {median_text} and p90 alignment is {p90_text}. See `release-validation.json` for all six team reports and measured quality results.", "",
               "Counts exclude carries. Shot-pattern findings exclude penalties, while the result includes every recorded goal. Turnover cost and player detriment are exploratory xT quantities. Pitch control is a simplified spatial model. Channel concentrations describe locations, not defensive responsibility.", ""]
     return "\n".join(lines)
 
 
+def source_events(root: Path, game: int, bundle: MatchBundle) -> pd.DataFrame:
+    """Read original local CSV/JSON directly, independently of Kloppy filtering."""
+    folder = root / "data" / f"Sample_Game_{game}"
+    if game != 3:
+        return pd.read_csv(folder / f"Sample_Game_{game}_RawEventsData.csv")
+    with (folder / "Sample_Game_3_events.json").open(encoding="utf-8") as stream:
+        events = json.load(stream)["data"]
+    rows = []
+    teams = bundle.metadata["source_team_ids"]
+    for event in events:
+        subtypes = event.get("subtypes") or []
+        if isinstance(subtypes, dict):
+            subtypes = [subtypes]
+        rows.append(dict(Team=teams[event["team"]["id"]], Type=event["type"]["name"],
+            Subtype="-".join(item["name"] for item in subtypes), Period=event["period"],
+            **{"Start Frame": event["start"]["frame"], "Start Time [s]": event["start"]["time"],
+               "From": event["from"]["id"], "Start X": event["start"]["x"],
+               "Start Y": event["start"]["y"], "End X": event["end"]["x"], "End Y": event["end"]["y"]}))
+    return pd.DataFrame(rows)
+
+
+def verify_sequences(report):
+    """Audit membership, counts, period/team integrity and clipped transition clocks."""
+    events = {e.event_id: e for e in report.event_evidence}
+    for label, table in (("possession", report.possessions), ("transition", report.transitions)):
+        for row in table.itertuples():
+            _require(bool(row.event_ids), f"empty {label}")
+            _require(all(eid in events for eid in row.event_ids), f"unknown {label} event")
+            selected = [events[eid] for eid in row.event_ids]
+            _require(all(e.period == row.period and e.match_id == row.match_id and e.team == row.team
+                         for e in selected), f"{label} period/match/team boundary crossed")
+            _require(_close(selected[0].time_s, row.start_time_s), f"{label} start clock mismatch")
+            _require(all(row.start_time_s <= e.time_s <= row.end_time_s for e in selected),
+                     f"{label} event outside clock window")
+            _require(int(row.shots) == sum(e.event == "shot" for e in selected), f"{label} shot count mismatch")
+            if label == "transition":
+                _require(0 <= row.end_time_s-row.start_time_s <= 10 and row.window_s == 10,
+                         "transition exceeds 10-second window")
+                source = events.get(row.source_turnover_event_id)
+                _require(source is not None and source.period == row.period and source.match_id == row.match_id,
+                         "transition source period/match mismatch")
+                _require(0 <= row.start_time_s-source.time_s <= 10, "transition trigger outside window")
+
+
+def audit_suggestions(report, source_events=None):
+    """Check each observation's support and citations, independently of ranking.
+
+    Tactical benefit is deliberately not scored: source moments cannot validate a
+    counterfactual adjustment. A visible tradeoff is a separate required field.
+    """
+    from soccer_tactics.analytics.report import channel
+    from soccer_tactics.analytics.xt import attacking
+    from soccer_tactics.analytics.sequences import DEFENSE
+    if not report.findings:
+        return []
+    by_id = {e.event_id: e for e in report.event_evidence}
+    events = pd.DataFrame([asdict(e) for e in report.event_evidence])
+    events["channel"] = channel(attacking(events).y0)
+    audits = []
+    for finding in report.findings:
+        _require(bool(finding.suggestion.strip()) and bool(finding.tradeoff.strip()), "suggestion needs visible tradeoff")
+        own = report.passes[report.passes.team == report.team]
+        category = finding.category
+        if category == "transition":
+            population = report.transitions[report.transitions.team == report.team]
+            support = population[(population.final_third_entries == 0) & (population.shots == 0)]
+            support_ids = {ids[0] for ids in support.event_ids}
+            numerator, denominator = len(support), len(population)
+        elif category == "defense":
+            _require(source_events is not None, "defense suggestion audit requires canonical source outcomes")
+            canonical = source_events.reset_index(drop=True).copy()
+            canonical["event_id"] = [f"{report.match_id}:{int(row.period)}:{int(row.frame)}:{i}"
+                                     for i, row in canonical.iterrows()]
+            actions = canonical[(canonical.team == report.team) & canonical.event.isin(DEFENSE)]
+            support = actions[~actions.success.astype(bool)]
+            numerator, denominator = len(support), len(actions)
+            support_ids = set(support.event_id)
+        elif category in {"buildup", "progression"}:
+            # Derive the channel from the complete title (the generated title names it).
+            names = [name for name in ("left", "centre", "right") if finding.title.endswith(name)]
+            _require(len(names) == 1, "finding channel unavailable")
+            population = own[own.channel == names[0]]
+            population = population[population.buildup] if category == "buildup" else population[population.outside_third]
+            support = population[population.buildup_loss] if category == "buildup" else population[~population.entry]
+            numerator, denominator = len(support), len(population)
+            support_ids = set(support.event_id)
+            if category == "progression":
+                _require(finding.metrics["entries"] == int(population.entry.sum()), "progression entry count mismatch")
+        elif category == "danger":
+            opponent = "away" if report.team == "home" else "home"
+            population = events[(events.team == opponent) & (events.event == "shot")] if finding.metrics["event_type"] == "shots" else report.passes[(report.passes.team == opponent) & report.passes.entry]
+            names = [name for name in ("left", "centre", "right") if finding.title.endswith(name)]
+            _require(len(names) == 1, "finding channel unavailable")
+            support = population[population.channel == names[0]]
+            numerator, denominator = len(support), len(population)
+            support_ids = set(support.event_id)
+        else:
+            raise ValueError(f"unaudited suggestion category: {category}")
+        _require(finding.metrics["numerator"] == numerator and finding.metrics["denominator"] == denominator,
+                 "finding support count mismatch")
+        _require(numerator >= 3 and denominator >= 5, "finding below display safeguard")
+        _require(bool(finding.evidence) and all(e.event_id in support_ids for e in finding.evidence),
+                 "citation does not support observation")
+        for citation in finding.evidence:
+            original = by_id.get(citation.event_id)
+            _require(original is not None and all(
+                _close(getattr(citation, key), getattr(original, key))
+                or (pd.isna(getattr(citation, key)) and pd.isna(getattr(original, key)))
+                for key in Evidence.__dataclass_fields__), "cited fields differ from audited source event")
+        audits.append(dict(category=category, title=finding.title, numerator=numerator, denominator=denominator,
+            citation_ids=[e.event_id for e in finding.evidence], descriptive_accuracy="pass",
+            tradeoff=finding.tradeoff, tradeoff_visible=True,
+            tactical_effect="Not evaluated: no causal or counterfactual validation"))
+    return audits
+
+
 def run(root: Path, output: Path) -> None:
-    bundles = [load_metrica_bundle(root, game) for game in (1, 2)]
-    results = []
-    for bundle, training in zip(bundles, bundles[::-1]):
+    if __package__:
+        from scripts.validate_cross_match import summarize_v4_fold
+    else:
+        from validate_cross_match import summarize_v4_fold
+    bundles = [load_metrica_bundle(root, game) for game in (1, 2, 3)]
+    results, reports = [], []
+    for bundle in bundles:
         game = int(bundle.match_id.rsplit("_", 1)[1])
-        raw = pd.read_csv(root / "data" / f"Sample_Game_{game}" / f"Sample_Game_{game}_RawEventsData.csv")
+        raw = source_events(root, game, bundle)
         _verify_modeling_shots(bundle, raw)
         source_goals = raw[(raw.Type == "SHOT") & raw.Subtype.fillna("").str.endswith("GOAL")]
         expected_score = {team: int((source_goals.Team.str.lower() == team).sum()) for team in ("home", "away")}
         _require(bundle.score == expected_score, f"complete source score mismatch for {bundle.match_id}")
+        if game == 3:
+            _require(expected_score == bundle.metadata["source_score"] == {"home": 0, "away": 2}, "Game 3 metadata score mismatch")
         source_penalty = (raw.Type.shift() == "SET PIECE") & (raw.Subtype.shift() == "PENALTY")
         expected_goals = source_goals[["Team", "Period", "Start Frame", "Start Time [s]", "From"]].copy()
         expected_goals.columns = ["team", "period", "frame", "time_s", "player_id"]
         expected_goals["team"] = expected_goals.team.str.lower()
         expected_goals["player_id"] = expected_goals.player_id.str.replace(" ", "", regex=False)
         expected_goals["penalty"] = source_penalty.loc[source_goals.index].to_numpy(bool)
-        actual_goals = bundle.goals[["team", "period", "frame", "time_s", "player_id", "penalty"]].copy()
-        goal_keys = ["team", "period", "frame", "time_s", "player_id", "penalty"]
-        _require(len(actual_goals) == len(expected_goals) and
-                 actual_goals.sort_values(goal_keys).reset_index(drop=True).equals(
-                     expected_goals.sort_values(goal_keys).reset_index(drop=True)),
-                 f"complete goal records or penalty flags differ from raw source for {bundle.match_id}")
-        for key in ("duplicate_objects", "conflicting_clocks"):
+        keys = ["team", "period", "frame", "time_s", "player_id", "penalty"]
+        _require(bundle.goals[keys].sort_values(keys).reset_index(drop=True).equals(
+            expected_goals.sort_values(keys).reset_index(drop=True)), "source goal records mismatch")
+        subtype = raw.Subtype.fillna("")
+        expected_counts = dict(pass_count=int(((raw.Type == "PASS") | ((raw.Type == "BALL LOST") & raw["End X"].notna() & ~subtype.str.contains(_NOT_A_PASS))).sum()),
+            shot=int(((raw.Type == "SHOT") & ~source_penalty).sum()),
+            tackle=int(((raw.Type == "CHALLENGE") & subtype.isin(["TACKLE-WON", "TACKLE-LOST"])).sum()),
+            interception=int(((raw.Type == "RECOVERY") & (subtype == "INTERCEPTION")).sum()),
+            recovery=int(((raw.Type == "RECOVERY") & (subtype == "THEFT")).sum()))
+        expected_counts["pass"] = expected_counts.pop("pass_count")
+        actual_counts = {kind: int((bundle.events.event == kind).sum()) for kind in expected_counts}
+        _require(actual_counts == expected_counts, f"source event totals mismatch: {actual_counts} != {expected_counts}")
+        for key in ("duplicate_objects", "conflicting_clocks", "frame_gaps"):
             _require(bundle.quality[key] == 0, f"{bundle.match_id} quality check {key} failed")
         _require(bundle.quality["alignment_p90_m"] < 2, f"{bundle.match_id} p90 alignment exceeds 2 m")
         _require(bundle.quality["event_tracking_coverage"] is not None and bundle.quality["event_tracking_coverage"] > .99,
                  f"{bundle.match_id} event-to-player tracking coverage is below 99%")
+        periods = []
+        for period, clocks in bundle.tracking[["period", "frame", "time_s"]].drop_duplicates().groupby("period"):
+            clocks = clocks.sort_values("frame")
+            _require(np.allclose(clocks.time_s.diff().dropna(), .04, atol=1e-7, rtol=0), "source sample rate is not 25 Hz")
+            selected = bundle.events[bundle.events.period == period]
+            _require(selected.frame.between(clocks.frame.min(), clocks.frame.max()).all() and
+                     selected.time_s.between(clocks.time_s.min(), clocks.time_s.max()).all(), "event outside period tracking bounds")
+            periods.append(dict(period=int(period), first_frame=int(clocks.frame.min()), last_frame=int(clocks.frame.max()),
+                first_time_s=float(clocks.time_s.min()), last_time_s=float(clocks.time_s.max()), fps=bundle.fps))
+        _require({p["period"] for p in periods} == set(bundle.events.period) == {1, 2}, "period coverage mismatch")
+        training = [other for other in bundles if other.match_id != bundle.match_id]
         for team in ("home", "away"):
-            report = analyze_match(bundle, team, [training])
-            _require(report.score == expected_score, f"{bundle.match_id} report score differs from complete goals")
-            for finding in report.findings:
-                _require(finding.metrics["denominator"] >= 5 and finding.metrics["numerator"] >= 3,
-                         f"{bundle.match_id}/{team} finding lacks minimum evidence support")
-                for evidence in finding.evidence:
+            report = analyze_match(bundle, team, training)
+            _require(report.provenance["training_match_ids"] == [other.match_id for other in training], "xT training provenance mismatch")
+            verify_sequences(report)
+            # Audit every retained source event, not only the three sampled citations.
+            if team == "home":
+                for evidence in report.event_evidence:
                     verify_evidence(bundle, evidence, raw)
-            results.append({"match_id": report.match_id, "team": team, "score": report.score,
-                            "outcome": report.outcome, "training_match_ids": [training.match_id],
-                            "quality": bundle.quality, "comparisons": report.comparisons.to_dict("records"),
-                            "findings": [asdict(f) for f in report.findings]})
+            audit = audit_suggestions(report, bundle.events)
+            reports.append(report)
+            results.append(dict(match_id=report.match_id, team=team, score=report.score, outcome=report.outcome,
+                training_match_ids=report.provenance["training_match_ids"], quality=bundle.quality,
+                source_event_counts=actual_counts, periods=periods, source_orientation_flips=_source_orientation_flips(raw),
+                comparisons=report.comparisons.to_dict("records"), findings=[asdict(f) for f in report.findings],
+                suggestion_audit=audit))
+    folds = [summarize_v4_fold(report, [(other.match_id, other.defensive_actions) for other in reports
+              if other.team == "home" and other.match_id != report.match_id]) for report in reports]
     output.mkdir(parents=True, exist_ok=True)
     clean_results = _json_safe(results)
     (output / "release-validation.json").write_text(json.dumps(clean_results, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+    (output / "cross-match-validation.json").write_text(json.dumps(_json_safe(folds), indent=2, allow_nan=False) + "\n", encoding="utf-8")
     featured = next(r for r in clean_results if r["match_id"] == "metrica_1" and r["team"] == "away")
     (output / "featured-analysis.md").write_text(_featured_markdown(featured), encoding="utf-8")
-    print(f"Validated {len(results)} real team reports; exported {output}")
+    print(f"Validated {len(results)} real team reports, {len(folds)} held-out team folds, "
+          f"{sum(len(r['suggestion_audit']) for r in results)} suggestions; exported {output}")
 
 
 if __name__ == "__main__":
@@ -250,6 +396,6 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("root", nargs="?", type=Path, default=Path("data/raw/metrica"))
-    parser.add_argument("--output", type=Path, default=Path("docs/demo"))
+    parser.add_argument("--output", type=Path, default=Path("docs/validation/v4"))
     args = parser.parse_args()
     run(args.root, args.output)

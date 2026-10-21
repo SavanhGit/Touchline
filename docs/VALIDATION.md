@@ -109,3 +109,92 @@ The portfolio walkthrough is an 80-second H.264 MP4 at 1440 × 1000 and 3 fps, e
 Local Markdown links in the main README, roadmap and demo README resolve. Raw data, environments and capture scratch files are ignored. See [demo notes and media](demo/README.md) for attribution and capture details.
 
 Native in-app browser playback served over local HTTP ran from start to completion: video duration 80 seconds, readyState 4; playback advanced while unpaused at 7.07, 27.88 and 35.63 seconds and finished with `ended=true`, `currentTime=80`. Visual playback checks confirmed game-1 away Overview at opening, risk/channel chart at 27.88 seconds, player table at 35.63 seconds and game-2 away 3–2 Overview at the end, each with readable captions. Native seeking was unavailable; full sequential decoding and the additional evidence-frame inspections cover the remaining footage.
+
+## V4 held-out validation (2026-10-21)
+
+V4 remains **in progress**. This section is the current three-match audit; older sections above describe earlier releases and are not current V4 counts. Raw source data was reused locally through ignored junctions, never downloaded, modified, or committed. Kloppy 3.19.1 was installed in the shared Python 3.12 environment.
+
+Reproduce from the repository root after installing `.[dev,dashboard,metrica-epts]` and providing all three local source sets:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe scripts/validate_release.py data/raw/metrica --output docs/validation/v4
+.\.venv\Scripts\python.exe scripts/validate_cross_match.py --metrica data/raw/metrica --output docs/validation/v4
+```
+
+Either script command runs the same complete source gate and exports both [release audits](validation/v4/release-validation.json) and [held-out comparisons](validation/v4/cross-match-validation.json). The latter command preserves the older standalone numerical experiment when `--metrica` is absent. The README documents the optional adapter, Game 3 file layout, attribution, and one-command dashboard launch.
+
+The final full suite, with all three Metrica source sets and optional Kloppy installed, exited 0: **449 passed in 427.96s (0:07:07)**, with no skipped tests or reported warnings. The focused source/audit unit selection passed **38 tests** with the real export deselected; the full suite includes that real export. An earlier full run before the final citation-field regression passed 448 tests. Local Markdown links and `git diff --check` passed.
+
+### Source and descriptive gates
+
+The real-data command exited 0: `Validated 6 real team reports, 6 held-out team folds, 18 suggestions; exported docs\validation\v4`. Scores are Home 3–0 Away, Home 3–2 Away, and Home 0–2 Away. Game 3 score also agrees with EPTS metadata. Complete goal records, penalty flags, and penalty-excluded modeling shot identities match the original feeds. Source totals include only explicitly recognized defensive subtypes; ambiguous exclusions remain listed by reason in each report quality record.
+
+| Game | Passes | Modeling shots | Tackles | Interceptions | Recoveries |
+|---|---:|---:|---:|---:|---:|
+| metrica_1 | 1021 | 24 | 66 | 162 | 23 |
+| metrica_2 | 1141 | 23 | 88 | 145 | 31 |
+| metrica_3 | 1369 | 20 | 72 | 127 | 26 |
+
+Both periods have contiguous 25 Hz frame clocks, no duplicate object keys or conflicting clocks, and every retained event lies within its period tracking frame/time bounds. Every canonical event was audited against the original CSV or Game 3 JSON: exact type/outcome, player/team, period/frame/source seconds, and normalized coordinate conversion. Period orientation is inferred independently from the original teams’ shot origins and compared with canonical coordinates; source events agree with tracking-derived orientation. Sequence membership, team/match/period scope, shot counts, clocks, turnover references, and the clipped 10-second limit are checked. The xT provenance of every report contains exactly the other two match IDs.
+
+Event-to-player tracking coverage is 100% in all three matches. Alignment p90 is 0.507 m, 0.509 m, and 0.000 m; Game 3 events coincide with its sampled player positions, so zero is source agreement, not independent sensor-accuracy evidence. Out-of-bounds samples and dropped missing player positions remain source limitations. Rates use observed tracking samples, not assumed 90-minute matches.
+
+### Leave-one-match-out descriptive comparisons
+
+A shot rate means **sequences containing at least one modeling shot / observed sequences**, not shots divided by sequences. The possession baseline uses the same held-out team over its whole observed match. It is descriptive and overlapping with the transition sample, not an independent control. Five of six transition rates are below this baseline; Game 2 away is slightly above. This is not evidence of benefit, harm, or significance.
+
+| Game / team | Transition shot sequences / transitions | Possession shot sequences / possessions |
+|---|---:|---:|
+| metrica_1 / home | 5/100 (5.00%) | 18/202 (8.91%) |
+| metrica_1 / away | 0/103 (0.00%) | 6/197 (3.05%) |
+| metrica_2 / home | 4/89 (4.49%) | 13/197 (6.60%) |
+| metrica_2 / away | 5/91 (5.49%) | 10/188 (5.32%) |
+| metrica_3 / home | 4/116 (3.45%) | 9/211 (4.27%) |
+| metrica_3 / away | 4/119 (3.36%) | 11/217 (5.07%) |
+
+Defensive comparisons use a **cross-match dataset baseline**, never a same-team baseline: anonymous home/away identities cannot be linked across games. For each action type, sum both teams’ actions across the other two matches, then divide by their summed observed team-minutes and multiply by 90. Do not average per-team rates. Held-out source rows are excluded from the baseline. The JSON retains baseline match IDs, raw action numerator, exposure denominator, and both rates.
+
+| Game / team | Action | Actions / observed team-minutes | Per 90 | Other-match dataset actions / team-minutes | Dataset per 90 |
+|---|---|---:|---:|---:|---:|
+| metrica_1 / home | interception | 72/96.671 | 67.032 | 272/379.889 | 64.440 |
+| metrica_1 / home | recovery | 12/96.671 | 11.172 | 57/379.889 | 13.504 |
+| metrica_1 / home | tackle | 33/96.671 | 30.723 | 160/379.889 | 37.906 |
+| metrica_1 / away | interception | 90/96.671 | 83.790 | 272/379.889 | 64.440 |
+| metrica_1 / away | recovery | 11/96.671 | 10.241 | 57/379.889 | 13.504 |
+| metrica_1 / away | tackle | 33/96.671 | 30.723 | 160/379.889 | 37.906 |
+| metrica_2 / home | interception | 74/94.104 | 70.773 | 289/385.023 | 67.554 |
+| metrica_2 / home | recovery | 21/94.104 | 20.084 | 49/385.023 | 11.454 |
+| metrica_2 / home | tackle | 37/94.104 | 35.386 | 138/385.023 | 32.258 |
+| metrica_2 / away | interception | 71/94.104 | 67.904 | 289/385.023 | 67.554 |
+| metrica_2 / away | recovery | 10/94.104 | 9.564 | 49/385.023 | 11.454 |
+| metrica_2 / away | tackle | 51/94.104 | 48.776 | 138/385.023 | 32.258 |
+| metrica_3 / home | interception | 50/95.841 | 46.953 | 307/381.549 | 72.415 |
+| metrica_3 / home | recovery | 7/95.841 | 6.573 | 54/381.549 | 12.738 |
+| metrica_3 / home | tackle | 35/95.841 | 32.867 | 154/381.549 | 36.326 |
+| metrica_3 / away | interception | 77/95.841 | 72.308 | 307/381.549 | 72.415 |
+| metrica_3 / away | recovery | 19/95.841 | 17.842 | 54/381.549 | 12.738 |
+| metrica_3 / away | tackle | 37/95.841 | 34.745 | 154/381.549 | 36.326 |
+
+### Channel shots and goals
+
+Each cell below is **channel shots / team modeling shots; channel goals / team modeling goals**. Zero-goal denominators remain explicit raw `0/0` counts; no goal-share percentage is inferred. Channels follow each team’s attacking direction. Game 2 away has one modeling goal and two complete score goals because its scored penalty is excluded from modeling.
+
+| Game / team | Right | Centre | Left |
+|---|---|---|---|
+| metrica_1 / home | 4/18; 1/3 | 13/18; 2/3 | 1/18; 0/3 |
+| metrica_1 / away | 1/6; 0/0 | 4/6; 0/0 | 1/6; 0/0 |
+| metrica_2 / home | 2/13; 0/3 | 9/13; 3/3 | 2/13; 0/3 |
+| metrica_2 / away | 1/10; 0/1 | 9/10; 1/1 | 0/10; 0/1 |
+| metrica_3 / home | 3/9; 0/0 | 6/9; 0/0 | 0/9; 0/0 |
+| metrica_3 / away | 2/11; 0/2 | 6/11; 2/2 | 3/11; 0/2 |
+
+### Suggestions audited separately
+
+All **18/18 displayed suggestions** passed their descriptive support audit: independently recounted numerators/denominators satisfy the display thresholds, every cited moment belongs to the stated supporting pattern, and a nonempty adjustment and visible tradeoff are present. Full cited event fields were checked against source rows. The JSON records each finding’s category, title, counts, citations, tradeoff, and descriptive accuracy separately from tactical effect. Supporting moments are examples, not an exhaustive list of all counted events.
+
+**Tactical effect is not evaluated.** A stated tradeoff is a plausible consideration, not an observed counterfactual outcome. The source data cannot validate whether closer cover, forward support, or a route change would alter the score. There are only three independent anonymous matches, no random assignment, no significance claim, and no learned shot-quality estimate. Counts omit unobserved carries and defensive work. The report finding cap can hide otherwise available summary patterns.
+
+### Remaining release gates
+
+The Task 4 six-selection Streamlit AppTest smoke passed against its recorded implementation revision; deterministic chat tests verify active-report citations and causal abstention. Live V4 Ollama answers and human browser layout/evidence checks at the final V4 revision remain unrecorded. V4 stays in progress pending those owner acceptance gates. Automated source/descriptive validation does not substitute for them.

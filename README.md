@@ -4,7 +4,7 @@
 
 ## Explore the demo
 
-The [featured analysis](docs/demo/featured-analysis.md) examines game 1's anonymous away team, which lost 3–0. Both perspectives of games 1–2 are supported; xT is fitted on the other game.
+The [featured analysis](docs/demo/featured-analysis.md) examines game 1's anonymous away team, which lost 3–0. Both perspectives of Games 1–3 are supported; xT is fitted on the other two available matches. The saved portfolio screenshots and walkthrough show the earlier two-game release.
 
 | View | What to look for | Screenshot |
 |---|---|---|
@@ -19,8 +19,8 @@ The [featured analysis](docs/demo/featured-analysis.md) examines game 1's anonym
 
 - **V1 — Complete (October 20, 2026):** the local Metrica-based analysis dashboard, evidence views and portfolio demo.
 - **V2 — Complete (October 21, 2026):** seven audited IDSSE matches in an origin-only catalogue; synchronization, attack direction, pass endpoints and IDSSE xT/progression remain deferred.
-- **V3 — In progress:** optional local question answering with Metrica report evidence and IDSSE origin-only citations.
-- **Next:** richer tactical analysis.
+- **V3 — Complete (October 21, 2026):** optional local question answering with Metrica report evidence and IDSSE origin-only citations.
+- **V4 — In progress:** observed possessions, clipped transitions, recognized defensive actions, and shot counts/outcomes. Held-out source validation is recorded separately from tactical-effect validation.
 - **Later:** derive tracking from recorded video, then work toward live analysis.
 
 See the [full roadmap](docs/ROADMAP.md) for scope and validation details.
@@ -37,7 +37,26 @@ python -m venv .venv
 git clone --depth 1 https://github.com/metrica-sports/sample-data.git data/raw/metrica
 ```
 
-The data clone supplies `data/raw/metrica/data/Sample_Game_1` and `Sample_Game_2`; keep these external source CSVs out of Git. If that data directory already exists, reuse the complete local clone. `requirements-demo.txt` pins tested direct dependencies; it is **not a transitive lockfile**. The `demo` extra supplies media tooling and is included to reproduce this environment. No account or API key is required.
+The data clone supplies `data/raw/metrica/data/Sample_Game_1` and `Sample_Game_2`; keep all external source files out of Git. If that data directory already exists, reuse the complete local clone. `requirements-demo.txt` pins tested direct dependencies; it is **not a transitive lockfile**. The `demo` extra supplies media tooling and is included to reproduce this environment. No account or API key is required.
+
+### Optional Metrica Game 3
+
+Install the local EPTS adapter (Kloppy `>=3.17,<4`):
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[metrica-epts]"
+```
+
+Reuse a complete local Metrica Sports sample-data source. Game 3 needs these three files together:
+
+```text
+data/raw/metrica/data/Sample_Game_3/
+  Sample_Game_3_metadata.xml
+  Sample_Game_3_tracking.txt
+  Sample_Game_3_events.json
+```
+
+No loader downloads data. The catalogue exposes Game 3 only when its local source set and optional dependency are ready. Raw data stays under ignored `data/raw/`. The Sequences & shots tab presents observed possessions, 10-second transition windows, recognized defensive outcomes per 90 observed team-minutes, and channel shots/goals. Counts do not estimate shot quality or tactical effects.
 
 ### Optional local match assistant
 
@@ -83,10 +102,11 @@ Open the local URL printed by Streamlit (normally [localhost:8501](http://localh
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest
-.\.venv\Scripts\python.exe scripts/validate_release.py data/raw/metrica
+.\.venv\Scripts\python.exe scripts/validate_release.py data/raw/metrica --output docs/validation/v4
+.\.venv\Scripts\python.exe scripts/validate_cross_match.py --metrica data/raw/metrica --output docs/validation/v4
 ```
 
-The release validator requires the real source files and exports all four match/team reports plus the featured source audit. Missing data must not be interpreted as a passing real-data gate. See [validation commands, observed outputs and limitations](docs/VALIDATION.md) and the [machine-readable report](docs/demo/release-validation.json).
+The release validator requires the real source files and exports all six match/team reports, source/suggestion audits, the featured report, and six held-out team folds. Both commands run the same source gate; either one reproduces both JSON artifacts. Missing data must not be interpreted as a passing real-data gate. See [validation commands, observed outputs and limitations](docs/VALIDATION.md) and the [V4 machine-readable report](docs/validation/v4/release-validation.json).
 
 ## Analytical API
 
@@ -106,7 +126,8 @@ Lower-level APIs remain available: `analytics.features.add_kinematics`, `analyti
 
 ## Interpretation and attribution
 
-- Two anonymous sample matches are a sanity-check dataset, not a coaching benchmark. The minimum five relevant events and three supporting events are display safeguards, not statistical significance tests.
+- Three anonymous sample matches are a sanity-check dataset, not a coaching benchmark. Home/away labels do not link team identity across matches; defensive comparisons use the other matches as a pooled dataset baseline. The minimum five relevant events and three supporting events are display safeguards, not statistical significance tests.
+- Possessions contain observed events only. Transition windows require an observed opponent turnover or retained successful defensive action, end by 10 seconds or possession/period end, and miss unrecorded activity. Recognized defense includes only TACKLE-WON/LOST, INTERCEPTION, and THEFT source subtypes; excluded actions are counted in quality metadata.
 - Pass-only metrics miss carries and other actions. Failed pass endpoints are loss/interception locations, not intended targets. Nonentries can be useful circulation; channel counts do not establish defensive responsibility.
 - Player eligibility defaults to 15 observed tracked minutes. Inferred goalkeepers appear separately by default. Single-match turnover cost is exploratory and can be dominated by a few events.
 - Complete goals, including penalties, determine the displayed result. Modeling shots exclude penalties. Unknown or missing observations remain unavailable.

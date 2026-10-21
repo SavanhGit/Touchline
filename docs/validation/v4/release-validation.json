@@ -1,0 +1,1964 @@
+[
+  {
+    "match_id": "metrica_1",
+    "team": "home",
+    "score": {
+      "home": 3,
+      "away": 0
+    },
+    "outcome": "win",
+    "training_match_ids": [
+      "metrica_2",
+      "metrica_3"
+    ],
+    "quality": {
+      "tracking_rows": 3278383,
+      "events": 1296,
+      "periods": [
+        1,
+        2
+      ],
+      "fps": 25.0,
+      "duplicate_objects": 0,
+      "missing_positions": 0,
+      "nonfinite_positions": 0,
+      "out_of_bounds": 32859,
+      "frame_gaps": 0,
+      "conflicting_clocks": 0,
+      "event_tracking_coverage": 1.0,
+      "alignment_median_m": 0.3325675869530205,
+      "alignment_p90_m": 0.5072545767235656,
+      "shots_in_attacking_half": 1.0,
+      "defensive_exclusions": {
+        "RECOVERY/<blank>": 84,
+        "CHALLENGE/AERIAL-WON": 27,
+        "CHALLENGE/GROUND-WON": 26,
+        "CHALLENGE/AERIAL-LOST": 22,
+        "CHALLENGE/GROUND-LOST": 21,
+        "CHALLENGE/TACKLE-FAULT-LOST": 17,
+        "CHALLENGE/TACKLE-FAULT-WON": 16,
+        "CHALLENGE/GROUND-FAULT-WON": 10,
+        "CHALLENGE/GROUND-FAULT-LOST": 8,
+        "RECOVERY/SAVED": 7,
+        "CHALLENGE/GROUND": 6,
+        "CHALLENGE/AERIAL-FAULT-WON": 4,
+        "CHALLENGE/AERIAL-FAULT-LOST": 4,
+        "RECOVERY/BLOCKED": 2,
+        "CHALLENGE/TACKLE-ADVANTAGE-WON": 2,
+        "CHALLENGE/TACKLE-ADVANTAGE-LOST": 2,
+        "CHALLENGE/DRIBBLE-WON": 1,
+        "CHALLENGE/GROUND-ADVANTAGE-LOST": 1
+      }
+    },
+    "source_event_counts": {
+      "shot": 24,
+      "tackle": 66,
+      "interception": 162,
+      "recovery": 23,
+      "pass": 1021
+    },
+    "periods": [
+      {
+        "period": 1,
+        "first_frame": 1,
+        "last_frame": 71268,
+        "first_time_s": 0.04,
+        "last_time_s": 2850.72,
+        "fps": 25.0
+      },
+      {
+        "period": 2,
+        "first_frame": 71269,
+        "last_frame": 145006,
+        "first_time_s": 2850.76,
+        "last_time_s": 5800.24,
+        "fps": 25.0
+      }
+    ],
+    "source_orientation_flips": {
+      "1": false,
+      "2": true
+    },
+    "comparisons": [
+      {
+        "team": "home",
+        "passes": 548,
+        "completed": 437,
+        "completion_rate": 0.7974452554744526,
+        "buildup_passes": 308,
+        "buildup_losses": 61,
+        "buildup_loss_rate": 0.19805194805194806,
+        "buildup_cost": 0.9287920054525224,
+        "final_third_entries": 28,
+        "pass_value_added": 2.1649443028441144,
+        "modeling_shots": 18
+      },
+      {
+        "team": "away",
+        "passes": 473,
+        "completed": 362,
+        "completion_rate": 0.7653276955602537,
+        "buildup_passes": 238,
+        "buildup_losses": 61,
+        "buildup_loss_rate": 0.25630252100840334,
+        "buildup_cost": 1.3650830300205223,
+        "final_third_entries": 31,
+        "pass_value_added": 0.9931086023947773,
+        "modeling_shots": 6
+      }
+    ],
+    "findings": [
+      {
+        "category": "progression",
+        "title": "Limited direct entries from the centre",
+        "observation": "3 of 143 passes starting outside the final third crossed into it successfully (2%). Other passes may be useful circulation; this does not establish poor decisions.",
+        "suggestion": "Review the supporting moments for a forward passing option, and compare routes through the other channels.",
+        "tradeoff": "More direct progression can increase turnover exposure; low entry rate alone does not justify forcing a pass.",
+        "metrics": {
+          "numerator": 140,
+          "denominator": 143,
+          "entries": 3,
+          "entry_rate": 0.02097902097902098
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_1:1:25476:258",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 25476,
+            "time_s": 1019.04,
+            "team": "home",
+            "player_id": "Player7",
+            "event": "pass",
+            "x0": -8.400000000000002,
+            "y0": 8.84,
+            "x1": -11.549999999999999,
+            "y1": -9.520000000000001
+          },
+          {
+            "event_id": "metrica_1:2:93775:816",
+            "match_id": "metrica_1",
+            "period": 2,
+            "frame": 93775,
+            "time_s": 3751.0,
+            "team": "home",
+            "player_id": "Player10",
+            "event": "pass",
+            "x0": 16.799999999999997,
+            "y0": -3.3999999999999995,
+            "x1": 45.15,
+            "y1": -2.719999999999999
+          },
+          {
+            "event_id": "metrica_1:2:127891:1154",
+            "match_id": "metrica_1",
+            "period": 2,
+            "frame": 127891,
+            "time_s": 5115.64,
+            "team": "home",
+            "player_id": "Player3",
+            "event": "pass",
+            "x0": -36.75,
+            "y0": 3.400000000000003,
+            "x1": -32.550000000000004,
+            "y1": 6.799999999999999
+          }
+        ]
+      },
+      {
+        "category": "transition",
+        "title": "Transitions without a direct entry or shot",
+        "observation": "85 of 100 observed transitions had no completed final-third entry or shot within the clipped 10-second window.",
+        "suggestion": "Review forward support at these transition starts as a tactical hypothesis.",
+        "tradeoff": "Sending support forward can reduce cover after another turnover; these observations do not establish causality.",
+        "metrics": {
+          "numerator": 85,
+          "denominator": 100
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_1:1:13739:126",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 13739,
+            "time_s": 549.56,
+            "team": "home",
+            "player_id": "Player6",
+            "event": "pass",
+            "x0": -2.100000000000002,
+            "y0": -19.720000000000002,
+            "x1": 18.900000000000006,
+            "y1": -2.040000000000002
+          },
+          {
+            "event_id": "metrica_1:1:67214:580",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 67214,
+            "time_s": 2688.56,
+            "team": "home",
+            "player_id": "Player4",
+            "event": "interception",
+            "x0": -12.6,
+            "y0": 26.52,
+            "x1": null,
+            "y1": null
+          },
+          {
+            "event_id": "metrica_1:2:116601:1024",
+            "match_id": "metrica_1",
+            "period": 2,
+            "frame": 116601,
+            "time_s": 4664.04,
+            "team": "home",
+            "player_id": "Player3",
+            "event": "recovery",
+            "x0": -25.2,
+            "y0": -1.3600000000000012,
+            "x1": null,
+            "y1": null
+          }
+        ]
+      },
+      {
+        "category": "buildup",
+        "title": "Buildup losses on the centre",
+        "observation": "23 of 115 buildup passes in this channel were lost (20%); total modeled cost 0.404 xT. Median nearest-opponent distance was 6.8 m.",
+        "suggestion": "Investigate offering a closer passing option on the centre, or varying the buildup route.",
+        "tradeoff": "Bringing support toward the ball can leave less space occupied further forward.",
+        "metrics": {
+          "numerator": 23,
+          "denominator": 115,
+          "rate": 0.2,
+          "cost": 0.40370917287114183
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_1:2:115016:999",
+            "match_id": "metrica_1",
+            "period": 2,
+            "frame": 115016,
+            "time_s": 4600.64,
+            "team": "home",
+            "player_id": "Player3",
+            "event": "pass",
+            "x0": -44.1,
+            "y0": 3.400000000000003,
+            "x1": -31.500000000000004,
+            "y1": 10.880000000000003
+          },
+          {
+            "event_id": "metrica_1:2:115137:1003",
+            "match_id": "metrica_1",
+            "period": 2,
+            "frame": 115137,
+            "time_s": 4605.48,
+            "team": "home",
+            "player_id": "Player2",
+            "event": "pass",
+            "x0": -43.050000000000004,
+            "y0": 0.6800000000000006,
+            "x1": -37.8,
+            "y1": -17.68
+          },
+          {
+            "event_id": "metrica_1:1:5520:56",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 5520,
+            "time_s": 220.8,
+            "team": "home",
+            "player_id": "Player4",
+            "event": "pass",
+            "x0": -21.0,
+            "y0": 4.760000000000001,
+            "x1": -23.099999999999998,
+            "y1": -1.3600000000000012
+          }
+        ]
+      }
+    ],
+    "suggestion_audit": [
+      {
+        "category": "progression",
+        "title": "Limited direct entries from the centre",
+        "numerator": 140,
+        "denominator": 143,
+        "citation_ids": [
+          "metrica_1:1:25476:258",
+          "metrica_1:2:93775:816",
+          "metrica_1:2:127891:1154"
+        ],
+        "descriptive_accuracy": "pass",
+        "tradeoff": "More direct progression can increase turnover exposure; low entry rate alone does not justify forcing a pass.",
+        "tradeoff_visible": true,
+        "tactical_effect": "Not evaluated: no causal or counterfactual validation"
+      },
+      {
+        "category": "transition",
+        "title": "Transitions without a direct entry or shot",
+        "numerator": 85,
+        "denominator": 100,
+        "citation_ids": [
+          "metrica_1:1:13739:126",
+          "metrica_1:1:67214:580",
+          "metrica_1:2:116601:1024"
+        ],
+        "descriptive_accuracy": "pass",
+        "tradeoff": "Sending support forward can reduce cover after another turnover; these observations do not establish causality.",
+        "tradeoff_visible": true,
+        "tactical_effect": "Not evaluated: no causal or counterfactual validation"
+      },
+      {
+        "category": "buildup",
+        "title": "Buildup losses on the centre",
+        "numerator": 23,
+        "denominator": 115,
+        "citation_ids": [
+          "metrica_1:2:115016:999",
+          "metrica_1:2:115137:1003",
+          "metrica_1:1:5520:56"
+        ],
+        "descriptive_accuracy": "pass",
+        "tradeoff": "Bringing support toward the ball can leave less space occupied further forward.",
+        "tradeoff_visible": true,
+        "tactical_effect": "Not evaluated: no causal or counterfactual validation"
+      }
+    ]
+  },
+  {
+    "match_id": "metrica_1",
+    "team": "away",
+    "score": {
+      "home": 3,
+      "away": 0
+    },
+    "outcome": "loss",
+    "training_match_ids": [
+      "metrica_2",
+      "metrica_3"
+    ],
+    "quality": {
+      "tracking_rows": 3278383,
+      "events": 1296,
+      "periods": [
+        1,
+        2
+      ],
+      "fps": 25.0,
+      "duplicate_objects": 0,
+      "missing_positions": 0,
+      "nonfinite_positions": 0,
+      "out_of_bounds": 32859,
+      "frame_gaps": 0,
+      "conflicting_clocks": 0,
+      "event_tracking_coverage": 1.0,
+      "alignment_median_m": 0.3325675869530205,
+      "alignment_p90_m": 0.5072545767235656,
+      "shots_in_attacking_half": 1.0,
+      "defensive_exclusions": {
+        "RECOVERY/<blank>": 84,
+        "CHALLENGE/AERIAL-WON": 27,
+        "CHALLENGE/GROUND-WON": 26,
+        "CHALLENGE/AERIAL-LOST": 22,
+        "CHALLENGE/GROUND-LOST": 21,
+        "CHALLENGE/TACKLE-FAULT-LOST": 17,
+        "CHALLENGE/TACKLE-FAULT-WON": 16,
+        "CHALLENGE/GROUND-FAULT-WON": 10,
+        "CHALLENGE/GROUND-FAULT-LOST": 8,
+        "RECOVERY/SAVED": 7,
+        "CHALLENGE/GROUND": 6,
+        "CHALLENGE/AERIAL-FAULT-WON": 4,
+        "CHALLENGE/AERIAL-FAULT-LOST": 4,
+        "RECOVERY/BLOCKED": 2,
+        "CHALLENGE/TACKLE-ADVANTAGE-WON": 2,
+        "CHALLENGE/TACKLE-ADVANTAGE-LOST": 2,
+        "CHALLENGE/DRIBBLE-WON": 1,
+        "CHALLENGE/GROUND-ADVANTAGE-LOST": 1
+      }
+    },
+    "source_event_counts": {
+      "shot": 24,
+      "tackle": 66,
+      "interception": 162,
+      "recovery": 23,
+      "pass": 1021
+    },
+    "periods": [
+      {
+        "period": 1,
+        "first_frame": 1,
+        "last_frame": 71268,
+        "first_time_s": 0.04,
+        "last_time_s": 2850.72,
+        "fps": 25.0
+      },
+      {
+        "period": 2,
+        "first_frame": 71269,
+        "last_frame": 145006,
+        "first_time_s": 2850.76,
+        "last_time_s": 5800.24,
+        "fps": 25.0
+      }
+    ],
+    "source_orientation_flips": {
+      "1": false,
+      "2": true
+    },
+    "comparisons": [
+      {
+        "team": "home",
+        "passes": 548,
+        "completed": 437,
+        "completion_rate": 0.7974452554744526,
+        "buildup_passes": 308,
+        "buildup_losses": 61,
+        "buildup_loss_rate": 0.19805194805194806,
+        "buildup_cost": 0.9287920054525224,
+        "final_third_entries": 28,
+        "pass_value_added": 2.1649443028441144,
+        "modeling_shots": 18
+      },
+      {
+        "team": "away",
+        "passes": 473,
+        "completed": 362,
+        "completion_rate": 0.7653276955602537,
+        "buildup_passes": 238,
+        "buildup_losses": 61,
+        "buildup_loss_rate": 0.25630252100840334,
+        "buildup_cost": 1.3650830300205223,
+        "final_third_entries": 31,
+        "pass_value_added": 0.9931086023947773,
+        "modeling_shots": 6
+      }
+    ],
+    "findings": [
+      {
+        "category": "progression",
+        "title": "Limited direct entries from the centre",
+        "observation": "9 of 137 passes starting outside the final third crossed into it successfully (7%). Other passes may be useful circulation; this does not establish poor decisions.",
+        "suggestion": "Review the supporting moments for a forward passing option, and compare routes through the other channels.",
+        "tradeoff": "More direct progression can increase turnover exposure; low entry rate alone does not justify forcing a pass.",
+        "metrics": {
+          "numerator": 128,
+          "denominator": 137,
+          "entries": 9,
+          "entry_rate": 0.06569343065693431
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_1:1:21580:213",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 21580,
+            "time_s": 863.2,
+            "team": "away",
+            "player_id": "Player16",
+            "event": "pass",
+            "x0": 3.150000000000003,
+            "y0": 2.040000000000002,
+            "x1": -2.100000000000002,
+            "y1": -19.040000000000003
+          },
+          {
+            "event_id": "metrica_1:1:67514:584",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 67514,
+            "time_s": 2700.56,
+            "team": "away",
+            "player_id": "Player25",
+            "event": "pass",
+            "x0": 51.449999999999996,
+            "y0": -2.7200000000000024,
+            "x1": 43.050000000000004,
+            "y1": 0.0
+          },
+          {
+            "event_id": "metrica_1:2:113498:979",
+            "match_id": "metrica_1",
+            "period": 2,
+            "frame": 113498,
+            "time_s": 4539.92,
+            "team": "away",
+            "player_id": "Player21",
+            "event": "pass",
+            "x0": -1.050000000000001,
+            "y0": -6.120000000000002,
+            "x1": 14.700000000000001,
+            "y1": 4.759999999999996
+          }
+        ]
+      },
+      {
+        "category": "transition",
+        "title": "Transitions without a direct entry or shot",
+        "observation": "91 of 103 observed transitions had no completed final-third entry or shot within the clipped 10-second window.",
+        "suggestion": "Review forward support at these transition starts as a tactical hypothesis.",
+        "tradeoff": "Sending support forward can reduce cover after another turnover; these observations do not establish causality.",
+        "metrics": {
+          "numerator": 91,
+          "denominator": 103
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_1:1:15222:145",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 15222,
+            "time_s": 608.88,
+            "team": "away",
+            "player_id": "Player17",
+            "event": "interception",
+            "x0": 4.200000000000004,
+            "y0": -23.119999999999997,
+            "x1": null,
+            "y1": null
+          },
+          {
+            "event_id": "metrica_1:1:66901:576",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 66901,
+            "time_s": 2676.04,
+            "team": "away",
+            "player_id": "Player22",
+            "event": "pass",
+            "x0": 14.700000000000001,
+            "y0": -34.68,
+            "x1": 10.499999999999998,
+            "y1": -21.759999999999998
+          },
+          {
+            "event_id": "metrica_1:2:115892:1009",
+            "match_id": "metrica_1",
+            "period": 2,
+            "frame": 115892,
+            "time_s": 4635.68,
+            "team": "away",
+            "player_id": "Player15",
+            "event": "interception",
+            "x0": 16.799999999999997,
+            "y0": 15.639999999999999,
+            "x1": null,
+            "y1": null
+          }
+        ]
+      },
+      {
+        "category": "buildup",
+        "title": "Buildup losses on the left",
+        "observation": "22 of 76 buildup passes in this channel were lost (29%); total modeled cost 0.313 xT. Median nearest-opponent distance was 3.2 m.",
+        "suggestion": "Investigate offering a closer passing option on the left, or varying the buildup route.",
+        "tradeoff": "Bringing support toward the ball can leave less space occupied further forward.",
+        "metrics": {
+          "numerator": 22,
+          "denominator": 76,
+          "rate": 0.2894736842105263,
+          "cost": 0.3127081869417355
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_1:1:57624:498",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 57624,
+            "time_s": 2304.96,
+            "team": "away",
+            "player_id": "Player16",
+            "event": "pass",
+            "x0": 47.24999999999999,
+            "y0": -12.919999999999996,
+            "x1": 32.550000000000004,
+            "y1": -16.32
+          },
+          {
+            "event_id": "metrica_1:1:31738:319",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 31738,
+            "time_s": 1269.52,
+            "team": "away",
+            "player_id": "Player20",
+            "event": "pass",
+            "x0": 14.700000000000001,
+            "y0": -11.560000000000002,
+            "x1": 16.800000000000004,
+            "y1": -12.919999999999996
+          },
+          {
+            "event_id": "metrica_1:1:22660:218",
+            "match_id": "metrica_1",
+            "period": 1,
+            "frame": 22660,
+            "time_s": 906.4,
+            "team": "away",
+            "player_id": "Player22",
+            "event": "pass",
+            "x0": 5.250000000000004,
+            "y0": -27.880000000000003,
+            "x1": 7.349999999999995,
+            "y1": -25.16
+          }
+        ]
+      }
+    ],
+    "suggestion_audit": [
+      {
+        "category": "progression",
+        "title": "Limited direct entries from the centre",
+        "numerator": 128,
+        "denominator": 137,
+        "citation_ids": [
+          "metrica_1:1:21580:213",
+          "metrica_1:1:67514:584",
+          "metrica_1:2:113498:979"
+        ],
+        "descriptive_accuracy": "pass",
+        "tradeoff": "More direct progression can increase turnover exposure; low entry rate alone does not justify forcing a pass.",
+        "tradeoff_visible": true,
+        "tactical_effect": "Not evaluated: no causal or counterfactual validation"
+      },
+      {
+        "category": "transition",
+        "title": "Transitions without a direct entry or shot",
+        "numerator": 91,
+        "denominator": 103,
+        "citation_ids": [
+          "metrica_1:1:15222:145",
+          "metrica_1:1:66901:576",
+          "metrica_1:2:115892:1009"
+        ],
+        "descriptive_accuracy": "pass",
+        "tradeoff": "Sending support forward can reduce cover after another turnover; these observations do not establish causality.",
+        "tradeoff_visible": true,
+        "tactical_effect": "Not evaluated: no causal or counterfactual validation"
+      },
+      {
+        "category": "buildup",
+        "title": "Buildup losses on the left",
+        "numerator": 22,
+        "denominator": 76,
+        "citation_ids": [
+          "metrica_1:1:57624:498",
+          "metrica_1:1:31738:319",
+          "metrica_1:1:22660:218"
+        ],
+        "descriptive_accuracy": "pass",
+        "tradeoff": "Bringing support toward the ball can leave less space occupied further forward.",
+        "tradeoff_visible": true,
+        "tactical_effect": "Not evaluated: no causal or counterfactual validation"
+      }
+    ]
+  },
+  {
+    "match_id": "metrica_2",
+    "team": "home",
+    "score": {
+      "home": 3,
+      "away": 2
+    },
+    "outcome": "win",
+    "training_match_ids": [
+      "metrica_1",
+      "metrica_3"
+    ],
+    "quality": {
+      "tracking_rows": 3188704,
+      "events": 1428,
+      "periods": [
+        1,
+        2
+      ],
+      "fps": 25.0,
+      "duplicate_objects": 0,
+      "missing_positions": 0,
+      "nonfinite_positions": 0,
+      "out_of_bounds": 21888,
+      "frame_gaps": 0,
+      "conflicting_clocks": 0,
+      "event_tracking_coverage": 1.0,
+      "alignment_median_m": 0.34024734906814896,
+      "alignment_p90_m": 0.5093221128050086,
+      "shots_in_attacking_half": 1.0,
+      "defensive_exclusions": {
+        "RECOVERY/<blank>": 63,
+        "CHALLENGE/GROUND-LOST": 48,
+        "CHALLENGE/GROUND-WON": 43,
+        "CHALLENGE/AERIAL-WON": 35,
+        "CHALLENGE/AERIAL-LOST": 30,
+        "CHALLENGE/GROUND-FAULT-LOST": 17,
+        "CHALLENGE/GROUND-FAULT-WON": 11,
+        "CHALLENGE/TACKLE-FAULT-WON": 9,
+        "CHALLENGE/TACKLE-FAULT-LOST": 6,
+        "RECOVERY/SAVED": 6,
+        "CHALLENGE/GROUND-ADVANTAGE-LOST": 4,
+        "CHALLENGE/AERIAL-FAULT-LOST": 4,
+        "CHALLENGE/GROUND": 4,
+        "CHALLENGE/AERIAL-FAULT-WON": 3,
+        "RECOVERY/BLOCKED": 3,
+        "CHALLENGE/GROUND-ADVANTAGE-WON": 3,
+        "CHALLENGE/TACKLE-ADVANTAGE-WON": 3,
+        "CHALLENGE/FAULT-WON": 1,
+        "CHALLENGE/TACKLE-ADVANTAGE-LOST": 1,
+        "CHALLENGE/DRIBBLE-WON": 1
+      }
+    },
+    "source_event_counts": {
+      "shot": 23,
+      "tackle": 88,
+      "interception": 145,
+      "recovery": 31,
+      "pass": 1141
+    },
+    "periods": [
+      {
+        "period": 1,
+        "first_frame": 1,
+        "last_frame": 67941,
+        "first_time_s": 0.04,
+        "last_time_s": 2717.64,
+        "fps": 25.0
+      },
+      {
+        "period": 2,
+        "first_frame": 67942,
+        "last_frame": 141156,
+        "first_time_s": 2717.68,
+        "last_time_s": 5646.24,
+        "fps": 25.0
+      }
+    ],
+    "source_orientation_flips": {
+      "1": true,
+      "2": false
+    },
+    "comparisons": [
+      {
+        "team": "home",
+        "passes": 639,
+        "completed": 543,
+        "completion_rate": 0.8497652582159625,
+        "buildup_passes": 294,
+        "buildup_losses": 49,
+        "buildup_loss_rate": 0.16666666666666666,
+        "buildup_cost": 0.9625147972386938,
+        "final_third_entries": 41,
+        "pass_value_added": 1.9900419900723683,
+        "modeling_shots": 13
+      },
+      {
+        "team": "away",
+        "passes": 502,
+        "completed": 421,
+        "completion_rate": 0.8386454183266933,
+        "buildup_passes": 246,
+        "buildup_losses": 39,
+        "buildup_loss_rate": 0.15853658536585366,
+        "buildup_cost": 0.814482775583671,
+        "final_third_entries": 30,
+        "pass_value_added": 1.4497132022045487,
+        "modeling_shots": 10
+      }
+    ],
+    "findings": [
+      {
+        "category": "progression",
+        "title": "Limited direct entries from the centre",
+        "observation": "10 of 155 passes starting outside the final third crossed into it successfully (6%). Other passes may be useful circulation; this does not establish poor decisions.",
+        "suggestion": "Review the supporting moments for a forward passing option, and compare routes through the other channels.",
+        "tradeoff": "More direct progression can increase turnover exposure; low entry rate alone does not justify forcing a pass.",
+        "metrics": {
+          "numerator": 145,
+          "denominator": 155,
+          "entries": 10,
+          "entry_rate": 0.06451612903225806
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_2:1:25450:328",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 25450,
+            "time_s": 1018.0,
+            "team": "home",
+            "player_id": "Player6",
+            "event": "pass",
+            "x0": -12.6,
+            "y0": 6.119999999999997,
+            "x1": -12.6,
+            "y1": -19.720000000000002
+          },
+          {
+            "event_id": "metrica_2:1:60944:708",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 60944,
+            "time_s": 2437.76,
+            "team": "home",
+            "player_id": "Player2",
+            "event": "pass",
+            "x0": -11.549999999999999,
+            "y0": -8.16,
+            "x1": 11.549999999999999,
+            "y1": -8.16
+          },
+          {
+            "event_id": "metrica_2:2:96783:1103",
+            "match_id": "metrica_2",
+            "period": 2,
+            "frame": 96783,
+            "time_s": 3871.32,
+            "team": "home",
+            "player_id": "Player5",
+            "event": "pass",
+            "x0": 16.800000000000004,
+            "y0": -10.880000000000003,
+            "x1": 13.65,
+            "y1": -25.84
+          }
+        ]
+      },
+      {
+        "category": "transition",
+        "title": "Transitions without a direct entry or shot",
+        "observation": "74 of 89 observed transitions had no completed final-third entry or shot within the clipped 10-second window.",
+        "suggestion": "Review forward support at these transition starts as a tactical hypothesis.",
+        "tradeoff": "Sending support forward can reduce cover after another turnover; these observations do not establish causality.",
+        "metrics": {
+          "numerator": 74,
+          "denominator": 89
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_2:1:18415:241",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 18415,
+            "time_s": 736.6,
+            "team": "home",
+            "player_id": "Player6",
+            "event": "pass",
+            "x0": -29.400000000000002,
+            "y0": 6.119999999999997,
+            "x1": -47.24999999999999,
+            "y1": 1.3600000000000012
+          },
+          {
+            "event_id": "metrica_2:1:58262:673",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 58262,
+            "time_s": 2330.48,
+            "team": "home",
+            "player_id": "Player4",
+            "event": "interception",
+            "x0": -18.900000000000006,
+            "y0": 27.200000000000003,
+            "x1": null,
+            "y1": null
+          },
+          {
+            "event_id": "metrica_2:2:106630:1193",
+            "match_id": "metrica_2",
+            "period": 2,
+            "frame": 106630,
+            "time_s": 4265.2,
+            "team": "home",
+            "player_id": "Player12",
+            "event": "interception",
+            "x0": -16.799999999999997,
+            "y0": -16.32,
+            "x1": null,
+            "y1": null
+          }
+        ]
+      },
+      {
+        "category": "buildup",
+        "title": "Buildup losses on the centre",
+        "observation": "23 of 101 buildup passes in this channel were lost (23%); total modeled cost 0.561 xT. Median nearest-opponent distance was 3.4 m.",
+        "suggestion": "Investigate offering a closer passing option on the centre, or varying the buildup route.",
+        "tradeoff": "Bringing support toward the ball can leave less space occupied further forward.",
+        "metrics": {
+          "numerator": 23,
+          "denominator": 101,
+          "rate": 0.22772277227722773,
+          "cost": 0.5611663255633847
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_2:2:111719:1236",
+            "match_id": "metrica_2",
+            "period": 2,
+            "frame": 111719,
+            "time_s": 4468.76,
+            "team": "home",
+            "player_id": "Player2",
+            "event": "pass",
+            "x0": -47.25,
+            "y0": -9.520000000000001,
+            "x1": -43.050000000000004,
+            "y1": 4.760000000000001
+          },
+          {
+            "event_id": "metrica_2:1:64740:763",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 64740,
+            "time_s": 2589.6,
+            "team": "home",
+            "player_id": "Player4",
+            "event": "pass",
+            "x0": -43.050000000000004,
+            "y0": 5.439999999999998,
+            "x1": -30.450000000000003,
+            "y1": 5.439999999999998
+          },
+          {
+            "event_id": "metrica_2:1:51998:627",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 51998,
+            "time_s": 2079.92,
+            "team": "home",
+            "player_id": "Player6",
+            "event": "pass",
+            "x0": -46.199999999999996,
+            "y0": 10.880000000000003,
+            "x1": -48.3,
+            "y1": 12.240000000000004
+          }
+        ]
+      }
+    ],
+    "suggestion_audit": [
+      {
+        "category": "progression",
+        "title": "Limited direct entries from the centre",
+        "numerator": 145,
+        "denominator": 155,
+        "citation_ids": [
+          "metrica_2:1:25450:328",
+          "metrica_2:1:60944:708",
+          "metrica_2:2:96783:1103"
+        ],
+        "descriptive_accuracy": "pass",
+        "tradeoff": "More direct progression can increase turnover exposure; low entry rate alone does not justify forcing a pass.",
+        "tradeoff_visible": true,
+        "tactical_effect": "Not evaluated: no causal or counterfactual validation"
+      },
+      {
+        "category": "transition",
+        "title": "Transitions without a direct entry or shot",
+        "numerator": 74,
+        "denominator": 89,
+        "citation_ids": [
+          "metrica_2:1:18415:241",
+          "metrica_2:1:58262:673",
+          "metrica_2:2:106630:1193"
+        ],
+        "descriptive_accuracy": "pass",
+        "tradeoff": "Sending support forward can reduce cover after another turnover; these observations do not establish causality.",
+        "tradeoff_visible": true,
+        "tactical_effect": "Not evaluated: no causal or counterfactual validation"
+      },
+      {
+        "category": "buildup",
+        "title": "Buildup losses on the centre",
+        "numerator": 23,
+        "denominator": 101,
+        "citation_ids": [
+          "metrica_2:2:111719:1236",
+          "metrica_2:1:64740:763",
+          "metrica_2:1:51998:627"
+        ],
+        "descriptive_accuracy": "pass",
+        "tradeoff": "Bringing support toward the ball can leave less space occupied further forward.",
+        "tradeoff_visible": true,
+        "tactical_effect": "Not evaluated: no causal or counterfactual validation"
+      }
+    ]
+  },
+  {
+    "match_id": "metrica_2",
+    "team": "away",
+    "score": {
+      "home": 3,
+      "away": 2
+    },
+    "outcome": "loss",
+    "training_match_ids": [
+      "metrica_1",
+      "metrica_3"
+    ],
+    "quality": {
+      "tracking_rows": 3188704,
+      "events": 1428,
+      "periods": [
+        1,
+        2
+      ],
+      "fps": 25.0,
+      "duplicate_objects": 0,
+      "missing_positions": 0,
+      "nonfinite_positions": 0,
+      "out_of_bounds": 21888,
+      "frame_gaps": 0,
+      "conflicting_clocks": 0,
+      "event_tracking_coverage": 1.0,
+      "alignment_median_m": 0.34024734906814896,
+      "alignment_p90_m": 0.5093221128050086,
+      "shots_in_attacking_half": 1.0,
+      "defensive_exclusions": {
+        "RECOVERY/<blank>": 63,
+        "CHALLENGE/GROUND-LOST": 48,
+        "CHALLENGE/GROUND-WON": 43,
+        "CHALLENGE/AERIAL-WON": 35,
+        "CHALLENGE/AERIAL-LOST": 30,
+        "CHALLENGE/GROUND-FAULT-LOST": 17,
+        "CHALLENGE/GROUND-FAULT-WON": 11,
+        "CHALLENGE/TACKLE-FAULT-WON": 9,
+        "CHALLENGE/TACKLE-FAULT-LOST": 6,
+        "RECOVERY/SAVED": 6,
+        "CHALLENGE/GROUND-ADVANTAGE-LOST": 4,
+        "CHALLENGE/AERIAL-FAULT-LOST": 4,
+        "CHALLENGE/GROUND": 4,
+        "CHALLENGE/AERIAL-FAULT-WON": 3,
+        "RECOVERY/BLOCKED": 3,
+        "CHALLENGE/GROUND-ADVANTAGE-WON": 3,
+        "CHALLENGE/TACKLE-ADVANTAGE-WON": 3,
+        "CHALLENGE/FAULT-WON": 1,
+        "CHALLENGE/TACKLE-ADVANTAGE-LOST": 1,
+        "CHALLENGE/DRIBBLE-WON": 1
+      }
+    },
+    "source_event_counts": {
+      "shot": 23,
+      "tackle": 88,
+      "interception": 145,
+      "recovery": 31,
+      "pass": 1141
+    },
+    "periods": [
+      {
+        "period": 1,
+        "first_frame": 1,
+        "last_frame": 67941,
+        "first_time_s": 0.04,
+        "last_time_s": 2717.64,
+        "fps": 25.0
+      },
+      {
+        "period": 2,
+        "first_frame": 67942,
+        "last_frame": 141156,
+        "first_time_s": 2717.68,
+        "last_time_s": 5646.24,
+        "fps": 25.0
+      }
+    ],
+    "source_orientation_flips": {
+      "1": true,
+      "2": false
+    },
+    "comparisons": [
+      {
+        "team": "home",
+        "passes": 639,
+        "completed": 543,
+        "completion_rate": 0.8497652582159625,
+        "buildup_passes": 294,
+        "buildup_losses": 49,
+        "buildup_loss_rate": 0.16666666666666666,
+        "buildup_cost": 0.9625147972386938,
+        "final_third_entries": 41,
+        "pass_value_added": 1.9900419900723683,
+        "modeling_shots": 13
+      },
+      {
+        "team": "away",
+        "passes": 502,
+        "completed": 421,
+        "completion_rate": 0.8386454183266933,
+        "buildup_passes": 246,
+        "buildup_losses": 39,
+        "buildup_loss_rate": 0.15853658536585366,
+        "buildup_cost": 0.814482775583671,
+        "final_third_entries": 30,
+        "pass_value_added": 1.4497132022045487,
+        "modeling_shots": 10
+      }
+    ],
+    "findings": [
+      {
+        "category": "progression",
+        "title": "Limited direct entries from the right",
+        "observation": "8 of 148 passes starting outside the final third crossed into it successfully (5%). Other passes may be useful circulation; this does not establish poor decisions.",
+        "suggestion": "Review the supporting moments for a forward passing option, and compare routes through the other channels.",
+        "tradeoff": "More direct progression can increase turnover exposure; low entry rate alone does not justify forcing a pass.",
+        "metrics": {
+          "numerator": 140,
+          "denominator": 148,
+          "entries": 8,
+          "entry_rate": 0.05405405405405406
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_2:1:16643:205",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 16643,
+            "time_s": 665.72,
+            "team": "away",
+            "player_id": "Player15",
+            "event": "pass",
+            "x0": 32.55,
+            "y0": 18.36,
+            "x1": 26.25,
+            "y1": 13.599999999999998
+          },
+          {
+            "event_id": "metrica_2:1:57992:671",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 57992,
+            "time_s": 2319.68,
+            "team": "away",
+            "player_id": "Player15",
+            "event": "pass",
+            "x0": -0.0,
+            "y0": 25.16,
+            "x1": -2.100000000000002,
+            "y1": 24.48
+          },
+          {
+            "event_id": "metrica_2:2:107641:1204",
+            "match_id": "metrica_2",
+            "period": 2,
+            "frame": 107641,
+            "time_s": 4305.64,
+            "team": "away",
+            "player_id": "Player16",
+            "event": "pass",
+            "x0": 12.6,
+            "y0": 18.36,
+            "x1": 11.549999999999999,
+            "y1": -8.16
+          }
+        ]
+      },
+      {
+        "category": "transition",
+        "title": "Transitions without a direct entry or shot",
+        "observation": "79 of 91 observed transitions had no completed final-third entry or shot within the clipped 10-second window.",
+        "suggestion": "Review forward support at these transition starts as a tactical hypothesis.",
+        "tradeoff": "Sending support forward can reduce cover after another turnover; these observations do not establish causality.",
+        "metrics": {
+          "numerator": 79,
+          "denominator": 91
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_2:1:16036:193",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 16036,
+            "time_s": 641.44,
+            "team": "away",
+            "player_id": "Player23",
+            "event": "recovery",
+            "x0": -18.900000000000006,
+            "y0": 17.68,
+            "x1": null,
+            "y1": null
+          },
+          {
+            "event_id": "metrica_2:1:54866:644",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 54866,
+            "time_s": 2194.64,
+            "team": "away",
+            "player_id": "Player17",
+            "event": "interception",
+            "x0": 22.05,
+            "y0": -17.0,
+            "x1": null,
+            "y1": null
+          },
+          {
+            "event_id": "metrica_2:2:103221:1170",
+            "match_id": "metrica_2",
+            "period": 2,
+            "frame": 103221,
+            "time_s": 4128.84,
+            "team": "away",
+            "player_id": "Player26",
+            "event": "pass",
+            "x0": -30.450000000000003,
+            "y0": 31.28,
+            "x1": -15.750000000000002,
+            "y1": 29.92
+          }
+        ]
+      },
+      {
+        "category": "defense",
+        "title": "Unsuccessful observed defensive actions",
+        "observation": "33 of 132 recognized defensive actions had unsuccessful source outcomes. Other defensive work is outside this sample.",
+        "suggestion": "Investigate closer cover around these defensive attempts as a tactical hypothesis.",
+        "tradeoff": "Closer cover can concede space elsewhere; action outcomes alone do not identify an individual error or establish causality.",
+        "metrics": {
+          "numerator": 33,
+          "denominator": 132
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_2:1:33556:416",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 33556,
+            "time_s": 1342.24,
+            "team": "away",
+            "player_id": "Player20",
+            "event": "tackle",
+            "x0": 15.750000000000002,
+            "y0": 8.84,
+            "x1": null,
+            "y1": null
+          },
+          {
+            "event_id": "metrica_2:1:66429:794",
+            "match_id": "metrica_2",
+            "period": 1,
+            "frame": 66429,
+            "time_s": 2657.16,
+            "team": "away",
+            "player_id": "Player20",
+            "event": "tackle",
+            "x0": 23.099999999999998,
+            "y0": 14.959999999999997,
+            "x1": null,
+            "y1": null
+          },
+          {
+            "event_id": "metrica_2:2:109323:1216",
+            "match_id": "metrica_2",
+            "period": 2,
+            "frame": 109323,
+            "time_s": 4372.92,
+            "team": "away",
+            "player_id": "Player19",
+            "event": "tackle",
+            "x0": -25.2,
+            "y0": -27.200000000000003,
+            "x1": null,
+            "y1": null
+          }
+        ]
+      }
+    ],
+    "suggestion_audit": [
+      {
+        "category": "progression",
+        "title": "Limited direct entries from the right",
+        "numerator": 140,
+        "denominator": 148,
+        "citation_ids": [
+          "metrica_2:1:16643:205",
+          "metrica_2:1:57992:671",
+          "metrica_2:2:107641:1204"
+        ],
+        "descriptive_accuracy": "pass",
+        "tradeoff": "More direct progression can increase turnover exposure; low entry rate alone does not justify forcing a pass.",
+        "tradeoff_visible": true,
+        "tactical_effect": "Not evaluated: no causal or counterfactual validation"
+      },
+      {
+        "category": "transition",
+        "title": "Transitions without a direct entry or shot",
+        "numerator": 79,
+        "denominator": 91,
+        "citation_ids": [
+          "metrica_2:1:16036:193",
+          "metrica_2:1:54866:644",
+          "metrica_2:2:103221:1170"
+        ],
+        "descriptive_accuracy": "pass",
+        "tradeoff": "Sending support forward can reduce cover after another turnover; these observations do not establish causality.",
+        "tradeoff_visible": true,
+        "tactical_effect": "Not evaluated: no causal or counterfactual validation"
+      },
+      {
+        "category": "defense",
+        "title": "Unsuccessful observed defensive actions",
+        "numerator": 33,
+        "denominator": 132,
+        "citation_ids": [
+          "metrica_2:1:33556:416",
+          "metrica_2:1:66429:794",
+          "metrica_2:2:109323:1216"
+        ],
+        "descriptive_accuracy": "pass",
+        "tradeoff": "Closer cover can concede space elsewhere; action outcomes alone do not identify an individual error or establish causality.",
+        "tradeoff_visible": true,
+        "tactical_effect": "Not evaluated: no causal or counterfactual validation"
+      }
+    ]
+  },
+  {
+    "match_id": "metrica_3",
+    "team": "home",
+    "score": {
+      "home": 0,
+      "away": 2
+    },
+    "outcome": "loss",
+    "training_match_ids": [
+      "metrica_1",
+      "metrica_2"
+    ],
+    "quality": {
+      "tracking_rows": 3260178,
+      "events": 1614,
+      "periods": [
+        1,
+        2
+      ],
+      "fps": 25.0,
+      "duplicate_objects": 0,
+      "missing_positions": 0,
+      "nonfinite_positions": 0,
+      "out_of_bounds": 24164,
+      "frame_gaps": 0,
+      "conflicting_clocks": 0,
+      "event_tracking_coverage": 1.0,
+      "alignment_median_m": 0.0,
+      "alignment_p90_m": 0.0,
+      "shots_in_attacking_half": 1.0,
+      "defensive_exclusions": {
+        "RECOVERY/<blank>": 131,
+        "CHALLENGE/GROUND-LOST": 77,
+        "CHALLENGE/GROUND-WON": 75,
+        "CHALLENGE/AERIAL-LOST": 25,
+        "CHALLENGE/AERIAL-WON": 24,
+        "CHALLENGE/AERIAL": 15,
+        "CHALLENGE/GROUND-FAULT-WON": 13,
+        "CHALLENGE/GROUND-FAULT-LOST": 13,
+        "RECOVERY/SAVED": 6,
+        "CHALLENGE/GROUND": 5,
+        "CHALLENGE/AERIAL-FAULT-LOST": 4,
+        "CHALLENGE/AERIAL-FAULT-WON": 4,
+        "RECOVERY/BLOCKED": 3,
+        "CHALLENGE/GROUND-ADVANTAGE-WON": 2,
+        "CHALLENGE/TACKLE-FAULT-WON": 2,
+        "CHALLENGE/TACKLE-FAULT-LOST": 2,
+        "CHALLENGE/GROUND-ADVANTAGE-LOST": 2,
+        "RECOVERY/GOAL": 1
+      }
+    },
+    "source_event_counts": {
+      "shot": 20,
+      "tackle": 72,
+      "interception": 127,
+      "recovery": 26,
+      "pass": 1369
+    },
+    "periods": [
+      {
+        "period": 1,
+        "first_frame": 1,
+        "last_frame": 69661,
+        "first_time_s": 0.04,
+        "last_time_s": 2786.44,
+        "fps": 25.0
+      },
+      {
+        "period": 2,
+        "first_frame": 69662,
+        "last_frame": 143761,
+        "first_time_s": 2786.48,
+        "last_time_s": 5750.44,
+        "fps": 25.0
+      }
+    ],
+    "source_orientation_flips": {
+      "1": true,
+      "2": false
+    },
+    "comparisons": [
+      {
+        "team": "home",
+        "passes": 715,
+        "completed": 585,
+        "completion_rate": 0.8181818181818182,
+        "buildup_passes": 400,
+        "buildup_losses": 61,
+        "buildup_loss_rate": 0.1525,
+        "buildup_cost": 1.1716419837013572,
+        "final_third_entries": 39,
+        "pass_value_added": 2.2223477515729018,
+        "modeling_shots": 9
+      },
+      {
+        "team": "away",
+        "passes": 654,
+        "completed": 536,
+        "completion_rate": 0.8195718654434251,
+        "buildup_passes": 375,
+        "buildup_losses": 72,
+        "buildup_loss_rate": 0.192,
+        "buildup_cost": 1.3580151828038618,
+        "final_third_entries": 32,
+        "pass_value_added": 1.943236887366507,
+        "modeling_shots": 11
+      }
+    ],
+    "findings": [
+      {
+        "category": "progression",
+        "title": "Limited direct entries from the centre",
+        "observation": "5 of 168 passes starting outside the final third crossed into it successfully (3%). Other passes may be useful circulation; this does not establish poor decisions.",
+        "suggestion": "Review the supporting moments for a forward passing option, and compare routes through the other channels.",
+        "tradeoff": "More direct progression can increase turnover exposure; low entry rate alone does not justify forcing a pass.",
+        "metrics": {
+          "numerator": 163,
+          "denominator": 168,
+          "entries": 5,
+          "entry_rate": 0.02976190476190476
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_3:1:18354:213",
+            "match_id": "metrica_3",
+            "period": 1,
+            "frame": 18354,
+            "time_s": 734.16,
+            "team": "home",
+            "player_id": "P3575",
+            "event": "pass",
+            "x0": 4.873050000000001,
+            "y0": 5.694320000000003,
+            "x1": 4.0351500000000025,
+            "y1": 28.062240000000003
+          },
+          {
+            "event_id": "metrica_3:1:65542:749",
+            "match_id": "metrica_3",
+            "period": 1,
+            "frame": 65542,
+            "time_s": 2621.68,
+            "team": "home",
+            "player_id": "P3570",
+            "event": "pass",
+            "x0": -41.069700000000005,
+            "y0": 2.4819999999999984,
+            "x1": -37.8,
+            "y1": 15.639999999999999
+          },
+          {
+            "event_id": "metrica_3:2:110764:1243",
+            "match_id": "metrica_3",
+            "period": 2,
+            "frame": 110764,
+            "time_s": 4430.56,
+            "team": "home",
+            "player_id": "P3570",
+            "event": "pass",
+            "x0": -17.28615,
+            "y0": 10.650839999999999,
+            "x1": -11.908050000000001,
+            "y1": 1.669400000000001
+          }
+        ]
+      },
+      {
+        "category": "transition",
+        "title": "Transitions without a direct entry or shot",
+        "observation": "99 of 116 observed transitions had no completed final-third entry or shot within the clipped 10-second window.",
+        "suggestion": "Review forward support at these transition starts as a tactical hypothesis.",
+        "tradeoff": "Sending support forward can reduce cover after another turnover; these observations do not establish causality.",
+        "metrics": {
+          "numerator": 99,
+          "denominator": 116
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_3:1:20628:242",
+            "match_id": "metrica_3",
+            "period": 1,
+            "frame": 20628,
+            "time_s": 825.12,
+            "team": "home",
+            "player_id": "P3571",
+            "event": "pass",
+            "x0": -23.613450000000004,
+            "y0": 16.379839999999998,
+            "x1": -8.5323,
+            "y1": 29.954
+          },
+          {
+            "event_id": "metrica_3:2:73498:828",
+            "match_id": "metrica_3",
+            "period": 2,
+            "frame": 73498,
+            "time_s": 2939.92,
+            "team": "home",
+            "player_id": "P3568",
+            "event": "pass",
+            "x0": -0.16274999999999956,
+            "y0": -22.55696,
+            "x1": 5.108249999999997,
+            "y1": -15.715480000000003
+          },
+          {
+            "event_id": "metrica_3:2:128099:1422",
+            "match_id": "metrica_3",
+            "period": 2,
+            "frame": 128099,
+            "time_s": 5123.96,
+            "team": "home",
+            "player_id": "P3580",
+            "event": "interception",
+            "x0": 9.672599999999997,
+            "y0": 30.30896,
+            "x1": null,
+            "y1": null
+          }
+        ]
+      },
+      {
+        "category": "defense",
+        "title": "Unsuccessful observed defensive actions",
+        "observation": "21 of 92 recognized defensive actions had unsuccessful source outcomes. Other defensive work is outside this sample.",
+        "suggestion": "Investigate closer cover around these defensive attempts as a tactical hypothesis.",
+        "tradeoff": "Closer cover can concede space elsewhere; action outcomes alone do not identify an individual error or establish causality.",
+        "metrics": {
+          "numerator": 21,
+          "denominator": 92
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_3:1:39635:445",
+            "match_id": "metrica_3",
+            "period": 1,
+            "frame": 39635,
+            "time_s": 1585.4,
+            "team": "home",
+            "player_id": "P3572",
+            "event": "tackle",
+            "x0": 17.35125,
+            "y0": -25.612199999999998,
+            "x1": null,
+            "y1": null
+          },
+          {
+            "event_id": "metrica_3:2:71204:795",
+            "match_id": "metrica_3",
+            "period": 2,
+            "frame": 71204,
+            "time_s": 2848.16,
+            "team": "home",
+            "player_id": "P3573",
+            "event": "tackle",
+            "x0": 3.7548000000000012,
+            "y0": -9.631519999999998,
+            "x1": null,
+            "y1": null
+          },
+          {
+            "event_id": "metrica_3:2:131195:1465",
+            "match_id": "metrica_3",
+            "period": 2,
+            "frame": 131195,
+            "time_s": 5247.8,
+            "team": "home",
+            "player_id": "P3583",
+            "event": "tackle",
+            "x0": 19.3746,
+            "y0": -17.009520000000002,
+            "x1": null,
+            "y1": null
+          }
+        ]
+      }
+    ],
+    "suggestion_audit": [
+      {
+        "category": "progression",
+        "title": "Limited direct entries from the centre",
+        "numerator": 163,
+        "denominator": 168,
+        "citation_ids": [
+          "metrica_3:1:18354:213",
+          "metrica_3:1:65542:749",
+          "metrica_3:2:110764:1243"
+        ],
+        "descriptive_accuracy": "pass",
+        "tradeoff": "More direct progression can increase turnover exposure; low entry rate alone does not justify forcing a pass.",
+        "tradeoff_visible": true,
+        "tactical_effect": "Not evaluated: no causal or counterfactual validation"
+      },
+      {
+        "category": "transition",
+        "title": "Transitions without a direct entry or shot",
+        "numerator": 99,
+        "denominator": 116,
+        "citation_ids": [
+          "metrica_3:1:20628:242",
+          "metrica_3:2:73498:828",
+          "metrica_3:2:128099:1422"
+        ],
+        "descriptive_accuracy": "pass",
+        "tradeoff": "Sending support forward can reduce cover after another turnover; these observations do not establish causality.",
+        "tradeoff_visible": true,
+        "tactical_effect": "Not evaluated: no causal or counterfactual validation"
+      },
+      {
+        "category": "defense",
+        "title": "Unsuccessful observed defensive actions",
+        "numerator": 21,
+        "denominator": 92,
+        "citation_ids": [
+          "metrica_3:1:39635:445",
+          "metrica_3:2:71204:795",
+          "metrica_3:2:131195:1465"
+        ],
+        "descriptive_accuracy": "pass",
+        "tradeoff": "Closer cover can concede space elsewhere; action outcomes alone do not identify an individual error or establish causality.",
+        "tradeoff_visible": true,
+        "tactical_effect": "Not evaluated: no causal or counterfactual validation"
+      }
+    ]
+  },
+  {
+    "match_id": "metrica_3",
+    "team": "away",
+    "score": {
+      "home": 0,
+      "away": 2
+    },
+    "outcome": "win",
+    "training_match_ids": [
+      "metrica_1",
+      "metrica_2"
+    ],
+    "quality": {
+      "tracking_rows": 3260178,
+      "events": 1614,
+      "periods": [
+        1,
+        2
+      ],
+      "fps": 25.0,
+      "duplicate_objects": 0,
+      "missing_positions": 0,
+      "nonfinite_positions": 0,
+      "out_of_bounds": 24164,
+      "frame_gaps": 0,
+      "conflicting_clocks": 0,
+      "event_tracking_coverage": 1.0,
+      "alignment_median_m": 0.0,
+      "alignment_p90_m": 0.0,
+      "shots_in_attacking_half": 1.0,
+      "defensive_exclusions": {
+        "RECOVERY/<blank>": 131,
+        "CHALLENGE/GROUND-LOST": 77,
+        "CHALLENGE/GROUND-WON": 75,
+        "CHALLENGE/AERIAL-LOST": 25,
+        "CHALLENGE/AERIAL-WON": 24,
+        "CHALLENGE/AERIAL": 15,
+        "CHALLENGE/GROUND-FAULT-WON": 13,
+        "CHALLENGE/GROUND-FAULT-LOST": 13,
+        "RECOVERY/SAVED": 6,
+        "CHALLENGE/GROUND": 5,
+        "CHALLENGE/AERIAL-FAULT-LOST": 4,
+        "CHALLENGE/AERIAL-FAULT-WON": 4,
+        "RECOVERY/BLOCKED": 3,
+        "CHALLENGE/GROUND-ADVANTAGE-WON": 2,
+        "CHALLENGE/TACKLE-FAULT-WON": 2,
+        "CHALLENGE/TACKLE-FAULT-LOST": 2,
+        "CHALLENGE/GROUND-ADVANTAGE-LOST": 2,
+        "RECOVERY/GOAL": 1
+      }
+    },
+    "source_event_counts": {
+      "shot": 20,
+      "tackle": 72,
+      "interception": 127,
+      "recovery": 26,
+      "pass": 1369
+    },
+    "periods": [
+      {
+        "period": 1,
+        "first_frame": 1,
+        "last_frame": 69661,
+        "first_time_s": 0.04,
+        "last_time_s": 2786.44,
+        "fps": 25.0
+      },
+      {
+        "period": 2,
+        "first_frame": 69662,
+        "last_frame": 143761,
+        "first_time_s": 2786.48,
+        "last_time_s": 5750.44,
+        "fps": 25.0
+      }
+    ],
+    "source_orientation_flips": {
+      "1": true,
+      "2": false
+    },
+    "comparisons": [
+      {
+        "team": "home",
+        "passes": 715,
+        "completed": 585,
+        "completion_rate": 0.8181818181818182,
+        "buildup_passes": 400,
+        "buildup_losses": 61,
+        "buildup_loss_rate": 0.1525,
+        "buildup_cost": 1.1716419837013572,
+        "final_third_entries": 39,
+        "pass_value_added": 2.2223477515729018,
+        "modeling_shots": 9
+      },
+      {
+        "team": "away",
+        "passes": 654,
+        "completed": 536,
+        "completion_rate": 0.8195718654434251,
+        "buildup_passes": 375,
+        "buildup_losses": 72,
+        "buildup_loss_rate": 0.192,
+        "buildup_cost": 1.3580151828038618,
+        "final_third_entries": 32,
+        "pass_value_added": 1.943236887366507,
+        "modeling_shots": 11
+      }
+    ],
+    "findings": [
+      {
+        "category": "progression",
+        "title": "Limited direct entries from the centre",
+        "observation": "8 of 157 passes starting outside the final third crossed into it successfully (5%). Other passes may be useful circulation; this does not establish poor decisions.",
+        "suggestion": "Review the supporting moments for a forward passing option, and compare routes through the other channels.",
+        "tradeoff": "More direct progression can increase turnover exposure; low entry rate alone does not justify forcing a pass.",
+        "metrics": {
+          "numerator": 149,
+          "denominator": 157,
+          "entries": 8,
+          "entry_rate": 0.050955414012738856
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_3:1:27391:306",
+            "match_id": "metrica_3",
+            "period": 1,
+            "frame": 27391,
+            "time_s": 1095.64,
+            "team": "away",
+            "player_id": "P3594",
+            "event": "pass",
+            "x0": -10.338299999999998,
+            "y0": 3.0973999999999986,
+            "x1": -11.963700000000005,
+            "y1": 11.38796
+          },
+          {
+            "event_id": "metrica_3:2:75270:852",
+            "match_id": "metrica_3",
+            "period": 2,
+            "frame": 75270,
+            "time_s": 3010.8,
+            "team": "away",
+            "player_id": "P3595",
+            "event": "pass",
+            "x0": 36.651300000000006,
+            "y0": 1.8924400000000015,
+            "x1": 2.1535500000000027,
+            "y1": -31.487399999999997
+          },
+          {
+            "event_id": "metrica_3:2:118917:1344",
+            "match_id": "metrica_3",
+            "period": 2,
+            "frame": 118917,
+            "time_s": 4756.68,
+            "team": "away",
+            "player_id": "P3587",
+            "event": "pass",
+            "x0": 39.04110000000001,
+            "y0": 1.9563600000000012,
+            "x1": -4.6914,
+            "y1": -4.768159999999997
+          }
+        ]
+      },
+      {
+        "category": "transition",
+        "title": "Transitions without a direct entry or shot",
+        "observation": "108 of 119 observed transitions had no completed final-third entry or shot within the clipped 10-second window.",
+        "suggestion": "Review forward support at these transition starts as a tactical hypothesis.",
+        "tradeoff": "Sending support forward can reduce cover after another turnover; these observations do not establish causality.",
+        "metrics": {
+          "numerator": 108,
+          "denominator": 119
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_3:1:25283:278",
+            "match_id": "metrica_3",
+            "period": 1,
+            "frame": 25283,
+            "time_s": 1011.32,
+            "team": "away",
+            "player_id": "P3590",
+            "event": "interception",
+            "x0": -3.2308499999999962,
+            "y0": 19.301119999999997,
+            "x1": null,
+            "y1": null
+          },
+          {
+            "event_id": "metrica_3:2:76942:878",
+            "match_id": "metrica_3",
+            "period": 2,
+            "frame": 76942,
+            "time_s": 3077.68,
+            "team": "away",
+            "player_id": "P3596",
+            "event": "interception",
+            "x0": 21.359100000000005,
+            "y0": 27.17756,
+            "x1": null,
+            "y1": null
+          },
+          {
+            "event_id": "metrica_3:2:128130:1424",
+            "match_id": "metrica_3",
+            "period": 2,
+            "frame": 128130,
+            "time_s": 5125.2,
+            "team": "away",
+            "player_id": "P3597",
+            "event": "interception",
+            "x0": 15.166200000000002,
+            "y0": 27.996959999999998,
+            "x1": null,
+            "y1": null
+          }
+        ]
+      },
+      {
+        "category": "buildup",
+        "title": "Buildup losses on the right",
+        "observation": "30 of 123 buildup passes in this channel were lost (24%); total modeled cost 0.520 xT. Median nearest-opponent distance was 3.5 m.",
+        "suggestion": "Investigate offering a closer passing option on the right, or varying the buildup route.",
+        "tradeoff": "Bringing support toward the ball can leave less space occupied further forward.",
+        "metrics": {
+          "numerator": 30,
+          "denominator": 123,
+          "rate": 0.24390243902439024,
+          "cost": 0.5201411000596996
+        },
+        "evidence": [
+          {
+            "event_id": "metrica_3:1:32823:356",
+            "match_id": "metrica_3",
+            "period": 1,
+            "frame": 32823,
+            "time_s": 1312.92,
+            "team": "away",
+            "player_id": "P3586",
+            "event": "pass",
+            "x0": 39.346650000000004,
+            "y0": 27.05924,
+            "x1": 39.9,
+            "y1": 26.52
+          },
+          {
+            "event_id": "metrica_3:2:92584:1056",
+            "match_id": "metrica_3",
+            "period": 2,
+            "frame": 92584,
+            "time_s": 3703.36,
+            "team": "away",
+            "player_id": "P3586",
+            "event": "pass",
+            "x0": 39.9231,
+            "y0": 25.78288,
+            "x1": 40.95,
+            "y1": 27.880000000000003
+          },
+          {
+            "event_id": "metrica_3:2:111394:1253",
+            "match_id": "metrica_3",
+            "period": 2,
+            "frame": 111394,
+            "time_s": 4455.76,
+            "team": "away",
+            "player_id": "P3699",
+            "event": "pass",
+            "x0": 39.712050000000005,
+            "y0": 14.72336,
+            "x1": 29.400000000000002,
+            "y1": 20.4
+          }
+        ]
+      }
+    ],
+    "suggestion_audit": [
+      {
+        "category": "progression",
+        "title": "Limited direct entries from the centre",
+        "numerator": 149,
+        "denominator": 157,
+        "citation_ids": [
+          "metrica_3:1:27391:306",
+          "metrica_3:2:75270:852",
+          "metrica_3:2:118917:1344"
+        ],
+        "descriptive_accuracy": "pass",
+        "tradeoff": "More direct progression can increase turnover exposure; low entry rate alone does not justify forcing a pass.",
+        "tradeoff_visible": true,
+        "tactical_effect": "Not evaluated: no causal or counterfactual validation"
+      },
+      {
+        "category": "transition",
+        "title": "Transitions without a direct entry or shot",
+        "numerator": 108,
+        "denominator": 119,
+        "citation_ids": [
+          "metrica_3:1:25283:278",
+          "metrica_3:2:76942:878",
+          "metrica_3:2:128130:1424"
+        ],
+        "descriptive_accuracy": "pass",
+        "tradeoff": "Sending support forward can reduce cover after another turnover; these observations do not establish causality.",
+        "tradeoff_visible": true,
+        "tactical_effect": "Not evaluated: no causal or counterfactual validation"
+      },
+      {
+        "category": "buildup",
+        "title": "Buildup losses on the right",
+        "numerator": 30,
+        "denominator": 123,
+        "citation_ids": [
+          "metrica_3:1:32823:356",
+          "metrica_3:2:92584:1056",
+          "metrica_3:2:111394:1253"
+        ],
+        "descriptive_accuracy": "pass",
+        "tradeoff": "Bringing support toward the ball can leave less space occupied further forward.",
+        "tradeoff_visible": true,
+        "tactical_effect": "Not evaluated: no causal or counterfactual validation"
+      }
+    ]
+  }
+]
