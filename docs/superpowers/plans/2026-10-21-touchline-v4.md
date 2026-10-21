@@ -38,11 +38,11 @@
 
 **Interfaces:** Preserve `load_metrica_game(root, game)` return compatibility. Add Game 3 through `load_metrica_bundle(root, game=3)` and the catalogue. Add optional extra `[metrica-epts] = ["kloppy>=3.17,<4"]`; local loading must not fetch source files. The canonical event types remain `pass`, `shot`, `tackle`, `interception`, and `recovery`; do not add ambiguous source subtypes. Map only `CHALLENGE` subtype `TACKLE-WON` to `tackle/success=True`, `TACKLE-LOST` to `tackle/success=False`, `RECOVERY/INTERCEPTION` to `interception/success=True`, and `RECOVERY/THEFT` to `recovery/success=True`. Exclude fault/advantage, aerial/ground, dribble, blank, saved, and blocked subtypes and count each exclusion reason.
 
-- [ ] Add failing tests `test_game3_epts_to_canonical_bundle`, `test_game3_event_clocks_align_to_tracking`, and `test_game3_catalogue_includes_only_complete_sources`; assert source score is 0–2, canonical columns validate, and event orientation agrees with tracking.
-- [ ] Add `test_defensive_event_subtype_mapping` and `test_ambiguous_defensive_events_are_excluded_and_counted` for the documented accepted/rejected subtype mapping.
-- [ ] Implement Game 3 EPTS/event loading through Kloppy’s Metrica loaders and map both sources into the existing canonical bundle.
-- [ ] Extend CSV Metrica loading to retain only explicitly recognized challenges/recoveries while preserving existing pass, penalty, goal, and orientation behavior.
-- [ ] Run focused loader and schema tests, then all tests that do not require optional dependency; commit `feat: load third Metrica match and defensive events`.
+- [x] Add failing tests `test_game3_epts_to_canonical_bundle`, `test_game3_event_clocks_align_to_tracking`, and `test_game3_catalogue_includes_only_complete_sources`; assert source score is 0–2, canonical columns validate, and event orientation agrees with tracking.
+- [x] Add `test_defensive_event_subtype_mapping` and `test_ambiguous_defensive_events_are_excluded_and_counted` for the documented accepted/rejected subtype mapping.
+- [x] Implement Game 3 EPTS/event loading through Kloppy’s Metrica loaders and map both sources into the existing canonical bundle.
+- [x] Extend CSV Metrica loading to retain only explicitly recognized challenges/recoveries while preserving existing pass, penalty, goal, and orientation behavior.
+- [x] Run focused loader and schema tests, then all tests that do not require optional dependency; commit `feat: load third Metrica match and defensive events`.
 
 ### Task 2: Possession and Transition Analytics
 
@@ -92,7 +92,7 @@
 **Files:** `scripts/validate_release.py`, `scripts/validate_cross_match.py`, `docs/VALIDATION.md`, `docs/ROADMAP.md`, `README.md`, validation tests.
 
 - [ ] Extend real-data validation to export both teams for Games 1–3 and verify score, event totals, source orientation, period integrity, sample rates, and other-match-only xT provenance.
-- [ ] Run leave-one-match-out folds for Games 1–3; compare each held-out transition shot rate with the same team’s overall possession shot rate and held-out defensive actions per 90 with the other-match team average. Report shots and goals by channel against the team-wide shot/goal totals, with raw counts and denominators; no significance or learned shot-quality claims.
+- [ ] Run leave-one-match-out folds for Games 1–3; compare each held-out transition shot rate with the same team’s overall possession shot rate and held-out defensive actions per 90 with the pooled dataset-wide rate for that action type across the other two matches, labeled as a cross-match dataset baseline rather than a same-team comparison. Report shots and goals by channel against the team-wide shot/goal totals, with raw counts and denominators; no significance or learned shot-quality claims.
 - [ ] Audit every tactical suggestion in each held-out report: confirm its cited source events support the observation and its stated tradeoff is visible; record descriptive accuracy separately and do not claim the suggestion would change the result. Document the optional Kloppy installation extra, local Game 3 data layout, source attribution, limitations, and the one-command dashboard launch.
 - [ ] Update V4 roadmap status only after all validation gates pass; otherwise leave V4 in progress and record the missing gate.
 - [ ] Run the full suite with the optional `metrica-epts` extra and real local source files; commit `docs: document and validate V4 analysis`.
