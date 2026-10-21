@@ -89,7 +89,7 @@
 
 ### Task 5: Held-Out Validation and User Documentation
 
-**Files:** `scripts/validate_real_data.py`, `docs/VALIDATION.md`, `docs/ROADMAP.md`, `README.md`, validation tests.
+**Files:** `scripts/validate_release.py`, `scripts/validate_cross_match.py`, `docs/VALIDATION.md`, `docs/ROADMAP.md`, `README.md`, validation tests.
 
 - [ ] Extend real-data validation to export both teams for Games 1–3 and verify score, event totals, source orientation, period integrity, sample rates, and other-match-only xT provenance.
 - [ ] Run leave-one-match-out folds for Games 1–3; compare each held-out transition shot rate with the same team’s overall possession shot rate and held-out defensive actions per 90 with the other-match team average. Report shots and goals by channel against the team-wide shot/goal totals, with raw counts and denominators; no significance or learned shot-quality claims.
