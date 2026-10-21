@@ -7,7 +7,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from soccer_tactics.analytics.report import analyze_match
+from soccer_tactics.analytics.report import analyze_catalogued_metrica
 from soccer_tactics.dashboard.charts import evidence_pitch, pass_map, snapshot, tracking_window
 from soccer_tactics.agent.chat import answer_question
 from soccer_tactics.dashboard.chat import build_idsse_context, build_metrica_context, render_chat_panel
@@ -30,9 +30,8 @@ def load_bundle(game, revision):
 
 @st.cache_data(max_entries=4, show_spinner="Building the evidence report…")
 def load_report(game, team, revision):
-    selected = load_bundle(game, revision)
-    training = load_bundle(3 - game, revision)
-    return analyze_match(selected, team, [training])
+    return analyze_catalogued_metrica(
+        game, team, load_catalogue(revision), lambda g: load_bundle(g, revision))
 
 
 @st.cache_data(max_entries=2)

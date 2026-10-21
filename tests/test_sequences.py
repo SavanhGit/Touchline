@@ -78,8 +78,7 @@ def test_transition_events_are_limited_to_selected_possession():
           {"event_id":"opp","team":"away","time_s":1},
           {"event_id":"later","team":"home","time_s":1}])
     t=summarize_transitions(e,segment_possessions(e,pd.DataFrame()),pd.DataFrame())
-    assert len(t)==1
-    assert t.iloc[0].event_ids==["win"]
+    assert t.empty
 
 
 def test_defensive_transition_clips_exact_window_and_just_after():

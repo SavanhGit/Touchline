@@ -70,6 +70,7 @@ def verify_evidence(bundle: MatchBundle, evidence: Evidence, raw_events: pd.Data
     conversion before comparing all coordinates.
     """
     _require(evidence.match_id == bundle.match_id, "evidence match does not match bundle")
+    defensive = evidence.event in {"tackle", "interception", "recovery"}
     canonical = bundle.events.reset_index(drop=True)
     selected = canonical[
         (canonical.match_id.astype(str) == str(evidence.match_id))
@@ -82,8 +83,8 @@ def verify_evidence(bundle: MatchBundle, evidence: Evidence, raw_events: pd.Data
         & np.isclose(selected.time_s, evidence.time_s, rtol=0, atol=1e-8)
         & np.isclose(selected.x0, evidence.x0, rtol=0, atol=1e-8)
         & np.isclose(selected.y0, evidence.y0, rtol=0, atol=1e-8)
-        & np.isclose(selected.x1, evidence.x1, rtol=0, atol=1e-8)
-        & np.isclose(selected.y1, evidence.y1, rtol=0, atol=1e-8)
+        & np.isclose(selected.x1, evidence.x1, rtol=0, atol=1e-8, equal_nan=defensive)
+        & np.isclose(selected.y1, evidence.y1, rtol=0, atol=1e-8, equal_nan=defensive)
     ]
     _require(len(exact) == 1, "evidence fields do not identify exactly one canonical event")
     event = exact.iloc[0]
@@ -92,12 +93,23 @@ def verify_evidence(bundle: MatchBundle, evidence: Evidence, raw_events: pd.Data
     _require(evidence.event_id == expected_event_id, "evidence ID does not identify its canonical event row")
 
     source_type = "SHOT" if event.event == "shot" else ("PASS" if bool(event.success) else "BALL LOST")
+    expected_subtype = None
+    if defensive:
+        source_type, expected_subtype = {
+            ("tackle", True): ("CHALLENGE", "TACKLE-WON"),
+            ("tackle", False): ("CHALLENGE", "TACKLE-LOST"),
+            ("interception", True): ("RECOVERY", "INTERCEPTION"),
+            ("recovery", True): ("RECOVERY", "THEFT"),
+        }.get((event.event, bool(event.success)), (None, None))
+        _require(source_type is not None, "unsupported defensive action outcome")
     raw = raw_events.copy()
     subtype = raw.Subtype.fillna("")
     mask = ((raw.Period == evidence.period) & (raw["Start Frame"] == evidence.frame)
             & (raw.Team.str.lower() == evidence.team)
             & (raw.From.fillna("").str.replace(" ", "", regex=False) == evidence.player_id)
             & (raw.Type == source_type))
+    if expected_subtype is not None:
+        mask &= subtype == expected_subtype
     if source_type == "BALL LOST":
         mask &= raw["End X"].notna() & ~subtype.str.contains(_NOT_A_PASS, regex=True)
     if source_type == "SHOT":
@@ -118,13 +130,18 @@ def verify_evidence(bundle: MatchBundle, evidence: Evidence, raw_events: pd.Data
         (.5 - float(source["End Y"])) * PITCH_WIDTH,
     ])
     canonical_xy = np.array([event.x0, event.y0, event.x1, event.y1], dtype=float)
-    _require(np.isfinite(converted).all(), "source event has unavailable coordinates")
+    _require(np.isfinite(converted[:2]).all(), "source event has unavailable origin coordinates")
+    if defensive:
+        _require((np.isfinite(converted[2:]) | np.isnan(converted[2:])).all(),
+                 "source defensive action has invalid endpoints")
+    else:
+        _require(np.isfinite(converted[2:]).all(), "source event has unavailable coordinates")
     flips = _source_orientation_flips(raw_events)
     _require(int(evidence.period) in flips,
              f"cannot independently infer source orientation for evidence period {evidence.period}")
     if flips[int(evidence.period)]:
         converted = -converted
-    _require(np.allclose(converted, canonical_xy, rtol=0, atol=1e-7),
+    _require(np.allclose(converted, canonical_xy, rtol=0, atol=1e-7, equal_nan=defensive),
              "source coordinates do not match canonical coordinates after normalized conversion/orientation")
     _require(str(source.Team).lower() == evidence.team, "source team differs from displayed evidence")
     _require(str(source.From).replace(" ", "") == evidence.player_id, "source player differs from displayed evidence")

@@ -294,7 +294,7 @@ dashboard.main()
     assert app.title[0].value == "What shaped the result?"
     app.selectbox(key="selected_team").select("home").run()
     assert not app.exception
-    assert any("Evidence ID: 1:1:0:0" in item.value for item in app.caption)
+    assert any(f"Evidence ID: {report.findings[0].evidence[0].event_id}" in item.value for item in app.caption)
 
 
 @pytest.mark.skipif(len(GAMES) < 2, reason="requires both real Metrica games")

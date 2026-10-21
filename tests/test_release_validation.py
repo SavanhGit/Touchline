@@ -167,3 +167,41 @@ def test_real_export_is_finite_and_has_other_match_training_only(tmp_path):
                for row in payload)
     assert "NaN" not in (tmp_path / "release-validation.json").read_text(encoding="utf-8")
     assert "Infinity" not in (tmp_path / "release-validation.json").read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize('event,success,source_type,subtype', [
+    ('tackle', True, 'CHALLENGE', 'TACKLE-WON'),
+    ('tackle', False, 'CHALLENGE', 'TACKLE-LOST'),
+    ('interception', True, 'RECOVERY', 'INTERCEPTION'),
+    ('recovery', True, 'RECOVERY', 'THEFT'),
+])
+def test_defensive_source_audit_accepts_exact_mapping_and_missing_endpoints(event, success, source_type, subtype):
+    b, e, raw = _bundle_and_source(event, success)
+    b.events.loc[0, ['x1', 'y1']] = float('nan')
+    e.x1 = e.y1 = float('nan')
+    raw.loc[0, ['Type', 'Subtype', 'End X', 'End Y']] = [source_type, subtype, float('nan'), float('nan')]
+    verify_evidence(b, e, raw)
+    raw.loc[0, 'Subtype'] = 'GROUND'
+    with pytest.raises(ValueError, match='original'):
+        verify_evidence(b, e, raw)
+
+
+@pytest.mark.parametrize('event', ['pass', 'shot'])
+def test_pass_and_shot_audit_still_rejects_missing_endpoints(event):
+    b, e, raw = _bundle_and_source(event)
+    b.events.loc[0, ['x1', 'y1']] = float('nan')
+    e.x1 = e.y1 = float('nan')
+    raw.loc[0, ['Type', 'End X', 'End Y']] = ['SHOT' if event == 'shot' else 'PASS', float('nan'), float('nan')]
+    with pytest.raises(ValueError):
+        verify_evidence(b, e, raw)
+
+
+def test_defensive_audit_rejects_changed_source_origin_or_present_endpoint():
+    b, e, raw = _bundle_and_source('tackle')
+    raw.loc[0, ['Type', 'Subtype']] = ['CHALLENGE', 'TACKLE-WON']
+    verify_evidence(b, e, raw)
+    for column in ['Start X', 'Start Y', 'End X', 'End Y']:
+        changed = raw.copy()
+        changed.loc[0, column] += .01
+        with pytest.raises(ValueError, match='coordinates'):
+            verify_evidence(b, e, changed)

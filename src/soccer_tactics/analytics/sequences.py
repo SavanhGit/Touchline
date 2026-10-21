@@ -110,15 +110,15 @@ def summarize_transitions(events: pd.DataFrame, possessions: pd.DataFrame, pass_
     for start_i, turnover_id, require_following, possession, _ in candidates.values():
         start = source.iloc[start_i]
         limit = float(start.time_s) + window_s
+        possession_ids = set(possession.event_ids)
         if require_following:
             following = source[(source.index > start_i) & (source.match_id == start.match_id) &
                 (source.period == start.period) & (source.team == start.team) &
-                (source.time_s <= limit)]
+                (source.time_s <= limit) & source.event_id.isin(possession_ids)]
             if following.empty:
                 continue
         # Restrict to this possession before clipping by clock. Time alone can pick up
         # a later possession when distinct events share the same timestamp.
-        possession_ids = set(possession.event_ids)
         later = source[(source.index >= start_i) & (source.match_id == start.match_id) &
             (source.period == start.period) & (source.event_id.isin(possession_ids)) &
             (source.time_s <= limit)]
