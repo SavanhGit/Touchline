@@ -58,8 +58,8 @@ def estimate_calibration(
     )
     if pitch_to_image is None or mask is None:
         return _invalid("homography estimation failed")
-    if not np.isfinite(pitch_to_image).all() or abs(float(np.linalg.det(pitch_to_image))) < 1e-12:
-        return _invalid("estimated homography is noninvertible")
+    if not np.isfinite(pitch_to_image).all():
+        return _invalid("estimated homography contains nonfinite values")
 
     inliers = mask.reshape(-1).astype(bool)
     inlier_count = int(inliers.sum())
@@ -70,8 +70,8 @@ def estimate_calibration(
         image_to_pitch = np.linalg.inv(pitch_to_image)
     except np.linalg.LinAlgError:
         return _invalid("estimated homography is noninvertible", inlier_count)
-    if not np.isfinite(image_to_pitch).all() or abs(float(np.linalg.det(image_to_pitch))) < 1e-12:
-        return _invalid("estimated inverse homography is nonfinite or noninvertible", inlier_count)
+    if not np.isfinite(image_to_pitch).all():
+        return _invalid("estimated inverse homography contains nonfinite values", inlier_count)
     predicted_image = _apply_homography(pitch_xy[inliers], pitch_to_image)
     errors = np.linalg.norm(predicted_image - image_xy[inliers], axis=1)
     median_error_px = float(np.median(errors))

@@ -65,6 +65,25 @@ def test_invertible_calibration_is_kept_when_inverse_bottom_right_is_zero(monkey
     np.testing.assert_allclose(project_points(image, result), pitch)
 
 
+def test_calibration_is_invariant_to_homography_scale(monkeypatch):
+    import cv2
+
+    pitch = np.array([[-52.5, -34], [52.5, -34], [52.5, 34], [-52.5, 34], [0, 0]], dtype=float)
+    pitch_to_image = np.array([[8.0, 0.25, 500.0], [0.1, 7.0, 350.0], [0.0003, -0.0002, 1.0]])
+    image = _project(pitch, pitch_to_image)
+    scaled_homography = pitch_to_image * 1e-6
+
+    monkeypatch.setattr(
+        cv2,
+        "findHomography",
+        lambda *args, **kwargs: (scaled_homography.copy(), np.ones((len(pitch), 1), dtype=np.uint8)),
+    )
+    result = estimate_calibration(_landmarks(image, pitch))
+
+    assert result.valid is True
+    np.testing.assert_allclose(project_points(image, result), pitch, atol=1e-5)
+
+
 @pytest.mark.parametrize("image,pitch", [
     (np.array([[0, 0], [1, 0], [1, 1]], dtype=float), np.array([[0, 0], [1, 0], [1, 1]], dtype=float)),
     (np.array([[0, 0], [1, 0], [2, 0], [3, 0]], dtype=float), np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype=float)),
