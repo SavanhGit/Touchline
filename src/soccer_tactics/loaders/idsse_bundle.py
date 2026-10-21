@@ -106,11 +106,12 @@ def load_idsse_bundle(root: str | Path, match_id: str) -> MatchBundle:
     length = metadata["source_pitch_dimensions_m"]["length"]
     width = metadata["source_pitch_dimensions_m"]["width"]
     origin_rows = []
-    for source_row in selection.source_events.itertuples(index=False):
+    for source_order, source_row in enumerate(selection.source_events.itertuples(index=False)):
         if pd.isna(source_row.canonical_index):
             continue
         selected = selection.events.iloc[int(source_row.canonical_index)]
         origin_rows.append({
+            "origin_id": f"IDSSE:{match_id}:{source_order:06d}",
             "match_id": match_id, "period": int(source_row.period),
             "team": source_row.team, "event": selected.event,
             "success": selected.success, "player_id": selected.player_id,

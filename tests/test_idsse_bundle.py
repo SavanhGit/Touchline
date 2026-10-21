@@ -123,6 +123,14 @@ def test_invalid_origin_team_is_rejected(source):
         validate_bundle(invalid)
 
 
+def test_duplicate_origin_ids_are_rejected(source):
+    bundle = load_idsse_bundle("unused", MATCH)
+    origins = bundle.event_origins.copy()
+    origins.loc[1, "origin_id"] = origins.loc[0, "origin_id"]
+    with pytest.raises(ValueError, match="origin IDs"):
+        validate_bundle(replace(bundle, event_origins=origins))
+
+
 def test_observed_rate_is_diagnostic_only(source):
     source.position_clocks["secondHalf"]["timestamp"] = [
         "2025-04-05T13:00:00.000Z", "2025-04-05T13:00:00.100Z",
@@ -216,6 +224,15 @@ def test_idsse_bundle_exposes_countable_origins_without_destinations_or_frames(s
     }
     assert "event_alignment" not in bundle.quality
     assert bundle.quality["event_origin_count"] == 4
+
+
+def test_origin_ids_follow_source_row_order_and_distinguish_rows(source):
+    first = load_idsse_bundle("unused", MATCH).event_origins
+    second = load_idsse_bundle("unused", MATCH).event_origins
+    assert first.origin_id.tolist() == second.origin_id.tolist()
+    assert first.origin_id.is_unique
+    assert first.origin_id.str.match(r"^IDSSE:DFL-MAT-FIXTURE:[0-9]{6}$").all()
+    assert len(set(first.origin_id)) == len(first)
 
 
 def test_idsse_source_passes_cannot_enter_xt(source):

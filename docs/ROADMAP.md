@@ -23,9 +23,11 @@ The IDSSE implementation is limited to an **origin-only IDSSE catalogue**. Seven
 
 This release preserves IDSSE source event coordinates, timestamps, and event-code provenance. IDSSE tracking synchronization, attack direction, pass endpoints, IDSSE xT and progression, and held-out IDSSE evaluation remain deferred. Metrica retains its existing endpoint-based analysis and training. IDSSE data is attributed to the Deutsche Fußball Liga (DFL) under CC BY 4.0. Citation: Bassek et al., “An integrated dataset of spatiotemporal and event data in elite soccer,” *Scientific Data* 12, 195 (2025), [doi:10.1038/s41597-025-04505-y](https://doi.org/10.1038/s41597-025-04505-y). See the [setup and source instructions](../README.md#optional-idsse-match-catalogue) and [validation notes](VALIDATION.md).
 
-## V3 — Question-answering agent
+## V3 — Local question-answering assistant
 
-Use the same report engine and evidence IDs as tools. Questions must be scoped to the selected match and team. Evaluate answers for numeric fidelity, evidence references, refusal of unsupported claims, and correct limits. Choose model provider and budget then; the dashboard remains usable without an API key. Replace shared global agent state with an explicit per-session analysis context before exposing chat.
+**Implementation:** optional Streamlit chat using local Ollama inference, defaulting to `qwen3:8b` with `TOUCHLINE_OLLAMA_MODEL` override. No paid provider or automatic model download is used. Metrica tools expose the selected report and citable match moments; IDSSE tools expose source event origins only. Context-bound dispatch replaces shared global agent state, and chat resets when the selected source, match, or team changes. See the [local assistant setup](../README.md#optional-local-match-assistant).
+
+**Acceptance still to verify on the project owner's machine:** manually run representative numeric and evidence questions with Qwen3 8B; confirm causal questions are declined, and IDSSE destination/synchronization questions are declined. Model answer quality remains sensitive to hardware and the locally selected model.
 
 ## V4 — Richer tactical analysis
 

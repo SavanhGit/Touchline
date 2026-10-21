@@ -4,7 +4,6 @@ import pandas as pd
 import pytest
 
 from factories import make_bundle
-from soccer_tactics.agent import tools
 from soccer_tactics.analytics.features import add_kinematics
 from soccer_tactics.analytics.impact import add_pressure, pass_values, player_impact
 from soccer_tactics.schema import COLUMNS
@@ -111,13 +110,3 @@ def test_invalid_explicit_fps(invalid_fps):
     passes = pass_values(bundle.events, GRID)
     with pytest.raises(ValueError, match="fps"):
         player_impact(passes, bundle.tracking, fps=invalid_fps)
-
-
-def test_top_speeds_keeps_matches_with_shared_player_ids_separate(monkeypatch):
-    tracking = pd.concat([_runner(match_id="one"), _runner(match_id="two", speed=6.0)])
-    monkeypatch.setitem(tools.STATE, "tracking", tracking)
-    results = tools.top_speeds(n=2)
-    assert len(results) == 2
-    speeds = {row["match_id"]: row["peak_speed"] for row in results}
-    assert np.isclose(speeds["one"], 2.0)
-    assert np.isclose(speeds["two"], 6.0)

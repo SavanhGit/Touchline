@@ -9,6 +9,8 @@ import streamlit as st
 
 from soccer_tactics.analytics.report import analyze_match
 from soccer_tactics.dashboard.charts import evidence_pitch, pass_map, snapshot, tracking_window
+from soccer_tactics.agent.chat import answer_question
+from soccer_tactics.dashboard.chat import build_idsse_context, build_metrica_context, render_chat_panel
 from soccer_tactics.loaders import load_metrica_bundle, load_idsse_bundle
 from soccer_tactics.loaders.catalog import list_match_catalogue
 
@@ -46,9 +48,10 @@ def load_idsse_selected(match_id, source_path, revision):
 @st.cache_data(max_entries=4)
 def load_idsse_origin_report(match_id, source_path, revision):
     bundle = load_idsse_selected(match_id, source_path, revision)
-    columns = ["period", "team", "event", "source_code", "source_timestamp",
-               "gameclock_s", "source_x_m", "source_y_m"]
-    origins = bundle.event_origins.loc[:, columns].copy()
+    columns = ["origin_id", "match_id", "period", "team", "event", "success",
+               "player_id", "source_code", "source_timestamp", "gameclock_s",
+               "source_x_m", "source_y_m", "x_m", "y_m"]
+    origins = bundle.event_origins.reindex(columns=columns).copy()
     origins["team"] = origins.team.map(bundle.team_names)
     return origins, bundle.score, bundle.team_names, bundle.metadata, bundle.quality
 
@@ -137,11 +140,21 @@ def main():
         st.caption("IDSSE/DFL source events are shown in the unrotated source frame. These records describe event origins only.")
         st.warning("Pass endpoints, attack direction, and event-to-tracking synchronization are unavailable. No tracking playback, xT, progression, or pass routes are shown.")
         st.subheader("Source event origins")
-        st.dataframe(origins[origins.team == team_names[team]], hide_index=True, width="stretch")
+        display_columns = ["period", "team", "event", "source_code", "source_timestamp",
+                           "gameclock_s", "source_x_m", "source_y_m"]
+        st.dataframe(origins.loc[origins.team == team_names[team], display_columns],
+                     hide_index=True, width="stretch")
         st.caption("Times and event codes come from the source event records; coordinates remain in the source frame.")
         st.subheader("Source and quality")
         st.write("Source: IDSSE / Deutsche Fußball Liga (DFL). Bassek et al., *Scientific Data* 12, 195 (2025).")
         st.json({"metadata": metadata, "quality": quality})
+        chat_context = build_idsse_context(
+            origins, selected.match_id.removeprefix("idsse_"), team, team_names
+        )
+        render_chat_panel(
+            st, chat_context, (selected.provider, selected.match_id, team),
+            answerer=answer_question,
+        )
         return
     game = int(selected.match_id.removeprefix("metrica_"))
     revision = catalogue_revision
@@ -254,6 +267,11 @@ def main():
             st.caption("Tracking reconstruction, not match video. The gold arrow stays fixed to the source event; player positions follow the slider. Trails show the preceding two seconds. Home always attacks right.")
             if control:
                 st.caption("Green indicates home control; orange indicates away control. Simplified time-to-intercept omits ball flight and acceleration; it is not pass-success probability.")
+    chat_context = build_metrica_context(report, bundle.team_names)
+    render_chat_panel(
+        st, chat_context, (selected.provider, selected.match_id, team),
+        answerer=answer_question,
+    )
     with st.expander("Methods, provenance & data quality"):
         for limitation in report.limitations:
             st.write(f"• {limitation}")

@@ -1,178 +1,298 @@
-"""Analytics-backed tools for an LLM agent.
+"""Context-bound, source-limited tools for local match question answering."""
+from __future__ import annotations
 
-The registry is deliberately independent of an LLM SDK. Applications can pass
-``specs()`` to their provider and dispatch tool calls through ``call``.
-"""
-from typing import Any, Callable
+import re
+from copy import deepcopy
+from dataclasses import dataclass
+from types import MappingProxyType
+from typing import Any, Mapping
 
 import numpy as np
 import pandas as pd
 
-TOOLS: dict[str, dict] = {}
-STATE: dict[str, Any] = {
-    "tracking": None,
-    "events": None,
-    "xt_grid": None,
-    "impact": None,
-}
+from soccer_tactics.analytics.report import MatchReport
 
 
-def tool(name: str, description: str, properties: dict, required: list[str]):
-    def wrap(fn: Callable):
-        TOOLS[name] = {
-            "spec": {
-                "name": name,
-                "description": description,
-                "input_schema": {"type": "object", "properties": properties, "required": required},
-            },
-            "fn": fn,
-        }
-        return fn
+@dataclass(frozen=True)
+class AnalysisContext:
+    """All data a single assistant session may inspect.
 
-    return wrap
+    DataFrames are copied at construction, while the frozen wrapper prevents
+    replacing the selected match/team or source during a session.
+    """
+
+    source: str
+    match_id: str
+    selected_team: str
+    report: MatchReport | None = None
+    event_origins: pd.DataFrame | None = None
+    team_names: Mapping[str, str] | None = None
+    limitations: tuple[str, ...] = ()
+    allowed_citation_ids: tuple[str, ...] = ()
+
+    def __post_init__(self):
+        if not self.source or not self.match_id:
+            raise ValueError("source and match ID are required")
+        if self.selected_team not in {"home", "away"}:
+            raise ValueError("team must be home or away")
+        names = dict(self.team_names or {})
+        object.__setattr__(self, "team_names", MappingProxyType(names))
+        object.__setattr__(self, "limitations", tuple(str(v) for v in self.limitations))
+        citations = tuple(dict.fromkeys(str(v) for v in self.allowed_citation_ids))
+        object.__setattr__(self, "allowed_citation_ids", citations)
+        if self.is_metrica:
+            if self.report is None or self.event_origins is not None:
+                raise ValueError("Metrica context requires a report and no origin frame")
+            if str(self.report.match_id) != str(self.match_id):
+                raise ValueError("report match does not match context match")
+            if self.report.team != self.selected_team:
+                raise ValueError("report team does not match selected team")
+            evidence = _report_evidence(self.report)
+            unknown = set(citations) - set(evidence)
+            if unknown:
+                raise ValueError("allowed citation IDs must refer to this report's match evidence")
+        elif self.is_idsse:
+            if self.report is not None or self.event_origins is None:
+                raise ValueError("IDSSE context requires event origins and no Metrica report")
+            origins = self.event_origins.copy(deep=True).reset_index(drop=True)
+            if origins.empty and citations:
+                raise ValueError("allowed citation IDs must refer to this match's origin rows")
+            if not origins.empty:
+                if "match_id" not in origins or set(origins.match_id.astype(str)) != {str(self.match_id)}:
+                    raise ValueError("origin rows do not match context match")
+                if "team" not in origins or not origins.team.isin(["home", "away"]).all():
+                    raise ValueError("origin rows require home or away team")
+                if "origin_id" not in origins:
+                    raise ValueError("origin rows require committed source origin IDs")
+                origin_ids = origins.origin_id.astype(str)
+                expected = rf"IDSSE:{re.escape(str(self.match_id))}:\d{{6}}"
+                if origin_ids.duplicated().any() or not origin_ids.str.fullmatch(expected).all():
+                    raise ValueError("origin rows require unique IDs for this source match")
+                selected_origin_ids = set(origins.loc[
+                    origins.team == self.selected_team, "origin_id"
+                ].astype(str))
+                unknown = set(citations) - selected_origin_ids
+                if unknown:
+                    raise ValueError("allowed citation IDs must refer to selected-team origin rows")
+            object.__setattr__(self, "event_origins", origins)
+        else:
+            raise ValueError(f"unsupported match source: {self.source}")
+
+    @property
+    def is_idsse(self) -> bool:
+        return self.source.casefold().startswith("idsse")
+
+    @property
+    def is_metrica(self) -> bool:
+        return self.source.casefold().startswith("metrica")
 
 
-def specs() -> list[dict]:
-    """Tool definitions in the format the Anthropic Messages API expects."""
-    return [t["spec"] for t in TOOLS.values()]
+def _report_evidence(report: MatchReport) -> dict[str, Any]:
+    """Index finding evidence and source-addressable report passes in scope."""
+    rows = {}
+    for finding in report.findings:
+        for evidence in finding.evidence:
+            # A selected-team finding can be supported by an opponent event,
+            # such as a shot or final-third entry. Scope it to this report's
+            # match; the report itself determines why the event is relevant.
+            if str(evidence.match_id) == str(report.match_id):
+                rows[str(evidence.event_id)] = evidence
+    if {"event_id", "match_id", "team"}.issubset(report.passes.columns):
+        fields = ("event_id", "match_id", "period", "frame", "time_s", "team",
+                  "player_id", "event", "x0", "y0", "x1", "y1")
+        for row in report.passes.to_dict("records"):
+            citation_id = str(row["event_id"])
+            if (str(row["match_id"]) == str(report.match_id) and row["team"] == report.team
+                    and citation_id not in rows):
+                rows[citation_id] = {key: row[key] for key in fields if key in row}
+    return rows
 
 
-def call(name: str, **kwargs):
-    if name not in TOOLS:
-        raise KeyError(f"unknown analytics tool: {name}")
-    return TOOLS[name]["fn"](**kwargs)
+def _json_value(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {str(k): _json_value(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_value(v) for v in value]
+    if isinstance(value, np.generic):
+        value = value.item()
+    if value is pd.NA or (isinstance(value, float) and not np.isfinite(value)):
+        return None
+    if isinstance(value, pd.Timestamp):
+        return value.isoformat()
+    return value
 
 
-def set_state(
-    *,
-    tracking: pd.DataFrame,
-    events: pd.DataFrame,
-    xt_grid: np.ndarray,
-    impact: pd.DataFrame | None = None,
-) -> None:
-    """Load the canonical match data and fitted analytics into the tool state."""
-    STATE.update(tracking=tracking, events=events, xt_grid=np.asarray(xt_grid), impact=impact)
+def _unique_citations(context: AnalysisContext) -> list[str]:
+    available = set(_report_evidence(context.report)) if context.report else set()
+    return [cid for cid in context.allowed_citation_ids if cid in available]
 
 
-def _require(*names: str) -> dict[str, Any]:
-    missing = [name for name in names if STATE.get(name) is None]
-    if missing:
-        raise RuntimeError(f"agent state is missing: {', '.join(missing)}")
-    return {name: STATE[name] for name in names}
-
-
-def _limit(n: int) -> int:
-    if n < 1 or n > 50:
-        raise ValueError("n must be between 1 and 50")
-    return n
-
-
-@tool(
-    "top_speeds",
-    "Peak speeds (m/s) by player in the loaded match, as the 99.9th percentile to ignore tracking noise.",
-    {"n": {"type": "integer", "description": "How many players to return"}},
-    [],
-)
-def top_speeds(n: int = 5) -> list[dict]:
-    from soccer_tactics.analytics.features import add_kinematics
-
-    n = _limit(n)
-    df = add_kinematics(_require("tracking")["tracking"])
-    df = df[df["team"] != "ball"]
-    out = df.groupby(["match_id", "team", "player_id"])["speed"].quantile(0.999).nlargest(n).rename("peak_speed")
-    return out.reset_index().to_dict("records")
-
-
-@tool(
-    "rank_players",
-    "Rank players by pass impact or build-up turnovers. Impact is pass-only and "
-    "single-match detriment is noisy; use turnover count for a steadier ranking.",
-    {
-        "metric": {
-            "type": "string",
-            "enum": ["impact_p90", "detriment_p90", "buildup_turnovers_p90"],
+def _spec(name: str, description: str, properties: dict, required: list[str] | None = None) -> dict:
+    return {
+        "name": name,
+        "description": description,
+        "input_schema": {
+            "type": "object", "properties": properties, "required": required or [],
+            "additionalProperties": False,
         },
-        "n": {"type": "integer", "description": "How many players to return"},
-        "outfield_only": {"type": "boolean", "description": "Exclude positional goalkeeper flags"},
-    },
-    ["metric"],
-)
-def rank_players(
-    metric: str = "impact_p90",
-    n: int = 5,
-    outfield_only: bool = True,
-) -> list[dict]:
-    n = _limit(n)
-    impact = _require("impact")["impact"]
-    if metric not in {"impact_p90", "detriment_p90", "buildup_turnovers_p90"}:
-        raise ValueError(f"unsupported player metric: {metric}")
-    out = impact if not outfield_only else impact[~impact["is_gk"]]
-    return out.nlargest(n, metric).to_dict("records")
+    }
 
 
-@tool(
-    "turnover_zones",
-    "Top build-up turnover locations in the losing team's attacking frame. "
-    "Costs are xT-weighted and should explain, not replace, turnover-count rankings.",
-    {
-        "team": {"type": "string", "enum": ["home", "away"]},
-        "n": {"type": "integer", "description": "How many zones to return"},
-    },
-    ["team"],
-)
-def turnover_zones(team: str, n: int = 5) -> list[dict]:
-    from soccer_tactics.analytics.impact import pass_values, turnover_zones as grid_zones
-
-    n = _limit(n)
-    if team not in {"home", "away"}:
-        raise ValueError("team must be home or away")
-    state = _require("events", "xt_grid", "tracking")
-    passes = pass_values(state["events"], state["xt_grid"], state["tracking"])
-    grid = grid_zones(passes[passes["team"] == team])
-    flat = np.argsort(grid.ravel())[::-1]
-    rows = []
-    for index in flat:
-        if len(rows) == n or grid.ravel()[index] <= 0:
-            break
-        x, y = np.unravel_index(index, grid.shape)
-        rows.append({"x_cell": int(x), "y_cell": int(y), "turnover_cost": float(grid[x, y])})
-    return rows
+_METRICA_SPECS = [
+    _spec("match_summary", "Summarize the selected match using its existing analysis report.", {}),
+    _spec("team_findings", "Return the selected team's report findings and cited evidence IDs.", {}),
+    _spec("player_metrics", "Read player metrics already present in the selected team's report.", {
+        "metric": {"type": "string", "description": "Optional metric column to sort by."},
+        "n": {"type": "integer", "description": "Maximum rows to return (1-20)."},
+    }),
+    _spec("evidence_lookup", "Look up one cited event from the selected team's report.", {
+        "citation_id": {"type": "string"},
+    }, ["citation_id"]),
+]
+_IDSSE_SPECS = [
+    _spec("origin_lookup", "Look up factual source event origins for the selected team.", {
+        "event": {"type": "string"},
+        "player_id": {"type": "string"},
+        "period": {"type": "integer"},
+        "n": {"type": "integer", "description": "Maximum rows to return (1-50)."},
+    }),
+]
 
 
-@tool(
-    "threat_map",
-    "Return control-weighted home and away threat at the tracking moment nearest to a match time. "
-    "Pitch control is time-to-intercept, not a pass-success or shot-prediction model.",
-    {
-        "match_id": {"type": "integer", "description": "Match identifier"},
-        "time_s": {"type": "number", "description": "Match time in seconds"},
-        "n": {"type": "integer", "description": "How many highest-threat cells to return"},
-    },
-    ["match_id", "time_s"],
-)
-def threat_map(match_id: int, time_s: float, n: int = 10) -> list[dict]:
-    from soccer_tactics.analytics.features import add_kinematics
-    from soccer_tactics.analytics.pitch_control import pitch_control, zone_threat
+def tool_specs(context: AnalysisContext) -> list[dict]:
+    """Return only the tool definitions available to this context."""
+    if context.is_idsse:
+        return deepcopy(_IDSSE_SPECS)
+    specs = deepcopy(_METRICA_SPECS)
+    numeric_metrics = sorted(
+        column for column in context.report.players.select_dtypes(include="number").columns
+        if column not in {"match_id"}
+    )
+    specs[2]["input_schema"]["properties"]["metric"]["enum"] = numeric_metrics
+    return specs
 
-    n = _limit(n)
-    tracking = add_kinematics(_require("tracking")["tracking"])
-    match = tracking[tracking["match_id"] == match_id]
-    if match.empty:
-        raise ValueError(f"match not found: {match_id}")
-    moment = (match[["period", "frame", "time_s"]].drop_duplicates()
-                .assign(_distance=lambda x: (x["time_s"] - time_s).abs())
-                .sort_values(["_distance", "period", "frame"]).iloc[0])
-    frame = match[(match["frame"] == moment["frame"]) & (match["period"] == moment["period"])]
-    control = pitch_control(frame)
-    home, away = zone_threat(control, _require("xt_grid")["xt_grid"])
-    rows = []
-    for team, values in (("home", home), ("away", away)):
-        for index in np.argsort(values.ravel())[::-1][:n]:
-            x, y = np.unravel_index(index, values.shape)
-            rows.append({
-                "team": team,
-                "x_cell": int(x),
-                "y_cell": int(y),
-                "threat": float(values[x, y]),
-            })
-    return rows
+
+def _validate_args(name: str, arguments: Mapping[str, Any], specs: list[dict]) -> dict:
+    if not isinstance(arguments, Mapping):
+        raise ValueError("tool arguments must be an object")
+    spec = next((item for item in specs if item["name"] == name), None)
+    if spec is None:
+        raise KeyError(f"unknown analytics tool: {name}")
+    props = spec["input_schema"]["properties"]
+    extra = set(arguments) - set(props)
+    missing = set(spec["input_schema"]["required"]) - set(arguments)
+    if extra or missing:
+        raise ValueError(f"invalid arguments; unexpected={sorted(extra)}, missing={sorted(missing)}")
+    result = dict(arguments)
+    for key, value in result.items():
+        if key == "n" or key == "period":
+            if isinstance(value, bool) or not isinstance(value, int):
+                raise ValueError(f"{key} must be an integer")
+        elif not isinstance(value, str):
+            raise ValueError(f"{key} must be a string")
+        elif "enum" in props[key] and value not in props[key]["enum"]:
+            raise ValueError(f"{key} must be one of the supported values")
+    return result
+
+
+def call_tool(context: AnalysisContext, name: str, arguments: Mapping[str, Any]) -> dict:
+    """Dispatch one tool against the supplied context, with source citations."""
+    args = _validate_args(name, arguments, tool_specs(context))
+    if context.is_idsse:
+        return _origin_lookup(context, args)
+    if name == "match_summary":
+        report = context.report
+        return _json_value({
+            "source": context.source, "match_id": context.match_id,
+            "team": context.selected_team,
+            "team_name": context.team_names.get(context.selected_team),
+            "score": report.score, "outcome": report.outcome,
+            "comparisons": report.comparisons[
+                report.comparisons.team == context.selected_team
+            ].to_dict("records") if "team" in report.comparisons else [],
+            "limitations": list(context.limitations or report.limitations),
+            "citation_ids": _unique_citations(context),
+        })
+    if name == "team_findings":
+        items = []
+        allowed = set(context.allowed_citation_ids)
+        for finding in context.report.findings:
+            evidence_ids = [str(row.event_id) for row in finding.evidence
+                            if str(row.match_id) == str(context.match_id)
+                            and str(row.event_id) in allowed]
+            items.append({"category": finding.category, "title": finding.title,
+                          "observation": finding.observation, "suggestion": finding.suggestion,
+                          "tradeoff": finding.tradeoff, "metrics": finding.metrics,
+                          "evidence_ids": evidence_ids})
+        return _json_value({"findings": items, "citation_ids": _unique_citations(context)})
+    if name == "player_metrics":
+        n = args.get("n", 10)
+        if not 1 <= n <= 20:
+            raise ValueError("n must be between 1 and 20")
+        rows = context.report.players
+        rows = rows[(rows.team == context.selected_team)
+                    & (rows.match_id.astype(str) == str(context.match_id))] \
+            if {"team", "match_id"}.issubset(rows.columns) else rows.iloc[0:0]
+        metric = args.get("metric")
+        if metric is not None:
+            if not isinstance(metric, str) or metric not in rows.columns:
+                raise ValueError("metric must name a report player metric")
+            rows = rows.sort_values(metric, ascending=False, na_position="last")
+        allowed = set(context.allowed_citation_ids)
+        pass_rows = context.report.passes
+        player_citations = {}
+        if {"event_id", "match_id", "team", "player_id"}.issubset(pass_rows.columns):
+            selected_passes = pass_rows[
+                (pass_rows.match_id.astype(str) == str(context.match_id))
+                & (pass_rows.team == context.selected_team)
+            ]
+            for player_id, player_rows in selected_passes.groupby("player_id", dropna=False):
+                player_citations[str(player_id)] = [
+                    str(value) for value in player_rows.event_id if str(value) in allowed
+                ]
+        output_rows = []
+        citations = []
+        for row in rows.head(n).to_dict("records"):
+            row_citations = player_citations.get(str(row.get("player_id")), [])
+            row["citation_ids"] = row_citations
+            citations.extend(row_citations)
+            output_rows.append(row)
+        return _json_value({"rows": output_rows,
+                            "citation_ids": list(dict.fromkeys(citations))})
+    if name == "evidence_lookup":
+        citation_id = args["citation_id"]
+        if not isinstance(citation_id, str) or citation_id not in context.allowed_citation_ids:
+            raise ValueError("citation ID is not allowed in this context")
+        evidence = _report_evidence(context.report).get(citation_id)
+        if evidence is None:
+            raise ValueError("citation ID is not included in this match report")
+        return _json_value({"evidence": vars(evidence) if not isinstance(evidence, dict) else evidence,
+                            "citation_ids": [citation_id]})
+    raise KeyError(f"unknown analytics tool: {name}")
+
+
+_ORIGIN_FIELDS = ("period", "team", "event", "success", "player_id", "source_code",
+                  "source_timestamp", "gameclock_s", "source_x_m", "source_y_m", "x_m", "y_m")
+
+
+def _origin_lookup(context: AnalysisContext, args: dict) -> dict:
+    n = args.get("n", 20)
+    if not 1 <= n <= 50:
+        raise ValueError("n must be between 1 and 50")
+    frame = context.event_origins
+    rows = frame[frame.team == context.selected_team]
+    for key in ("event", "player_id", "period"):
+        if key in args:
+            if key not in rows.columns:
+                raise ValueError(f"origin data has no {key} field")
+            rows = rows[rows[key] == args[key]]
+    allowed = set(context.allowed_citation_ids)
+    output = []
+    for index, row in rows.head(n).iterrows():
+        citation_id = str(row["origin_id"])
+        if citation_id not in allowed:
+            continue
+        item = {key: row[key] for key in _ORIGIN_FIELDS if key in row.index}
+        item["citation_id"] = citation_id
+        output.append(_json_value(item))
+    return {"origins": output, "citation_ids": [row["citation_id"] for row in output]}
