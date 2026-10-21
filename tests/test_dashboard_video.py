@@ -1,5 +1,6 @@
 """Video UI contracts use fake inference; decoding and persistence stay real."""
 from io import BytesIO
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -9,7 +10,7 @@ pytest.importorskip("streamlit")
 from streamlit.testing.v1 import AppTest
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def preload_parquet_engine():
     # AppTest rolls back newly imported modules, while Arrow's C registry survives.
     # Initialize pandas' Arrow extensions outside its script before save/read tests.
@@ -17,7 +18,7 @@ def preload_parquet_engine():
     pd.DataFrame({"warmup": [1]}).to_parquet(BytesIO(), index=False)
 
 
-def video_app(tmp_path, *, invalid=False, failure=False, missing_cv=False):
+def video_app(tmp_path, *, invalid=False, failure=False, missing_cv=False, track_ids=("7",)):
     cv2 = pytest.importorskip("cv2")
     import numpy as np
     clip = tmp_path / "source.mp4"
@@ -25,6 +26,8 @@ def video_app(tmp_path, *, invalid=False, failure=False, missing_cv=False):
     writer.write(np.zeros((48, 64, 3), dtype=np.uint8))
     writer.release()
     payload = b"invalid" if invalid else clip.read_bytes()
+    detections = [{"frame": 0, "track_id": track_id, "x": 2., "y": 3.}
+                  for track_id in track_ids]
     script = f'''
 from io import BytesIO
 from pathlib import Path
@@ -44,7 +47,7 @@ def processor(source, config, **kwargs):
     overlay.write_bytes(source.read_bytes())
     kwargs["on_progress"](1, 1)
     return VideoTrackingResult(
-        pd.DataFrame([{{"frame": 0, "track_id": "7", "x": 2., "y": 3.}}]),
+        pd.DataFrame({detections!r}),
         pd.DataFrame([{{"frame": 0, "calibration_valid": True}}]),
         {{"match_id": config.match_id, "fps":25., "source_sha256":"a"*64,
           "home_attacks_positive_x":config.home_attacks_positive_x}}, overlay)
@@ -69,7 +72,7 @@ def process(app):
     return app
 
 
-def test_fake_processing_review_mapping_and_export(tmp_path):
+def test_fake_processing_review_mapping_and_export(tmp_path, preload_parquet_engine):
     app = process(video_app(tmp_path))
     assert not app.exception
     assert len(app.get("video")) == 1
@@ -129,7 +132,7 @@ def test_attack_direction_required_and_changing_it_clears_review(tmp_path):
     assert not app.get("video")
 
 
-def test_mapping_edit_invalidates_previous_export(tmp_path):
+def test_mapping_edit_invalidates_previous_export(tmp_path, preload_parquet_engine):
     app = process(video_app(tmp_path))
     app.session_state["_mapping_edits"] = {0: {"team": "away"}}
     app.run()
@@ -138,6 +141,27 @@ def test_mapping_edit_invalidates_previous_export(tmp_path):
     app.session_state["_mapping_edits"] = {0: {"team": "home"}}
     app.run()
     assert not any(item.label == "Download run" for item in app.get("download_button"))
+
+
+def test_excluded_track_has_no_persisted_rows_or_assignment(tmp_path, preload_parquet_engine):
+    app = process(video_app(tmp_path, track_ids=("7", "8")))
+    assert not app.exception
+    assert app.dataframe[-1].value.track_id.tolist() == ["7", "8"]
+    app.session_state["_mapping_edits"] = {
+        0: {"team": "home", "roster_name": "Ada"},
+        1: {"team": "exclude", "roster_name": "Excluded player"},
+    }
+    app.run()
+    assert not app.button(key="save_video_run").disabled
+    app.button(key="save_video_run").click().run()
+    assert not app.exception
+    assert any(item.label == "Download run" for item in app.get("download_button"))
+    run, = (tmp_path / "runs").iterdir()
+    tracking = pd.read_parquet(run / "tracking.parquet")
+    assert tracking.player_id.tolist() == ["7"]
+    assert tracking.team.tolist() == ["home"]
+    metadata = json.loads((run / "metadata.json").read_text())
+    assert metadata["assignments"] == {"7": {"team": "home", "roster_name": "Ada"}}
 
 
 def test_video_workspace_bypasses_missing_match_catalogue(tmp_path):
