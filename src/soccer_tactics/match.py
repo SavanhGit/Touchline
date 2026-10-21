@@ -38,11 +38,16 @@ def validate_bundle(bundle: MatchBundle) -> None:
     validate_events(bundle.events)
     if not bundle.event_origins.empty:
         origins = bundle.event_origins
-        required_origin = {"match_id", "period", "team", "event", "player_id", "source_code",
+        required_origin = {"origin_id", "match_id", "period", "team", "event", "player_id", "source_code",
                            "source_timestamp", "gameclock_s", "source_x_m", "source_y_m", "x_m", "y_m"}
         missing_origin = required_origin - set(origins)
         if missing_origin:
             raise ValueError(f"event origins missing columns: {sorted(missing_origin)}")
+        suffix = origins.origin_id.astype("string").str.extract(
+            r"^IDSSE:([^:]+):([0-9]{6})$")
+        if (origins.origin_id.duplicated().any() or suffix.isna().any().any()
+                or not suffix[0].equals(origins.match_id.astype("string").reset_index(drop=True))):
+            raise ValueError("event origins must have unique valid source origin IDs")
         if {"frame", "x1", "y1", "to_x", "to_y"} & set(origins):
             raise ValueError("event origins cannot claim tracking frames or destinations")
         if set(origins.match_id.astype(str)) != {str(bundle.match_id)}:

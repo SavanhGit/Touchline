@@ -1,6 +1,7 @@
-# Tested direct dependencies on Python 3.12; not a complete transitive lockfile.
-numpy==2.3.5
-pandas==3.0.1
+# Direct dependency pins for the demo; not a complete transitive lockfile.
+# NumPy 2.5.4 and pandas 3.0.6 provide CPython 3.15 Windows wheels.
+numpy==2.5.4
+pandas==3.0.6
 pyarrow==26.0.0
 streamlit==1.66.0
 plotly==7.1.0

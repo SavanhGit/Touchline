@@ -19,24 +19,44 @@ The [featured analysis](docs/demo/featured-analysis.md) examines game 1's anonym
 
 - **V1 — Complete (October 20, 2026):** the local Metrica-based analysis dashboard, evidence views and portfolio demo.
 - **V2 — Complete (October 21, 2026):** seven audited IDSSE matches in an origin-only catalogue; synchronization, attack direction, pass endpoints and IDSSE xT/progression remain deferred.
-- **Next:** evidence-backed question answering, followed by richer tactical analysis.
+- **V3 — In progress:** optional local question answering with Metrica report evidence and IDSSE origin-only citations.
+- **Next:** richer tactical analysis.
 - **Later:** derive tracking from recorded video, then work toward live analysis.
 
 See the [full roadmap](docs/ROADMAP.md) for scope and validation details.
 
 ## Windows setup
 
-Install Python 3.12 and Git. In PowerShell, from this repository:
+Install 64-bit Python 3.15 and Git. In PowerShell, from this repository:
 
 ```powershell
-python --version  # use Python 3.12
-python -m venv .venv
+py -3.15 --version
+py -3.15 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e ".[dev,dashboard,demo]" -c requirements-demo.txt
 .\.venv\Scripts\python.exe -m pip check
 git clone --depth 1 https://github.com/metrica-sports/sample-data.git data/raw/metrica
 ```
 
 The data clone supplies `data/raw/metrica/data/Sample_Game_1` and `Sample_Game_2`; keep these external source CSVs out of Git. If that data directory already exists, reuse the complete local clone. `requirements-demo.txt` pins tested direct dependencies; it is **not a transitive lockfile**. The `demo` extra supplies media tooling and is included to reproduce this environment. No account or API key is required.
+
+### Optional local match assistant
+
+Touchline's assistant uses a model served on your computer by [Ollama](https://ollama.com/download/windows). Install a model yourself; Touchline never downloads one automatically. The default is `qwen3:8b`:
+
+```powershell
+ollama pull qwen3:8b
+```
+
+Start Ollama, launch Touchline as usual, then use **Ask the local match assistant** below the selected match report. Chat requests go only to `http://localhost:11434`; no API key or paid model call is used. The analysis dashboard remains available when Ollama is stopped.
+
+If Qwen3 8B responds too slowly on your computer, install a smaller model and select it for the current PowerShell session:
+
+```powershell
+ollama pull qwen3:4b
+$env:TOUCHLINE_OLLAMA_MODEL = "qwen3:4b"
+```
+
+Metrica answers can cite selected-team report moments and player metrics. IDSSE answers can cite recorded event origins only; they cannot infer destinations, progression, tracking synchronization, attack direction, or xT. Chat history stays in the current Streamlit session and resets when the source, match, or team changes.
 
 ### Optional IDSSE match catalogue
 
@@ -82,7 +102,7 @@ report = analyze_match(match, "away", [training])
 tracking, events = load_metrica_game("data/raw/metrica", game=1)  # compatible tuple API
 ```
 
-Lower-level APIs remain available: `analytics.features.add_kinematics`, `analytics.xt.fit_xt` / `add_xt`, `analytics.pitch_control.pitch_control` / `zone_threat`, and `analytics.impact.pass_values` / `player_impact`. Fit xT on other matches when scoring player impact. Canonical file loading, experimental agent-tool adapters, action-aware metrics, constant-velocity forecasts and a CV adapter are development seams; operational chat and video inference are future work in the [roadmap](docs/ROADMAP.md).
+Lower-level APIs remain available: `analytics.features.add_kinematics`, `analytics.xt.fit_xt` / `add_xt`, `analytics.pitch_control.pitch_control` / `zone_threat`, and `analytics.impact.pass_values` / `player_impact`. Fit xT on other matches when scoring player impact. The optional match assistant uses context-bound tools and local Ollama inference; action-aware metrics, constant-velocity forecasts, a CV adapter, and video inference remain development work in the [roadmap](docs/ROADMAP.md).
 
 ## Interpretation and attribution
 

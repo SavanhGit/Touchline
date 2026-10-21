@@ -24,7 +24,8 @@ def clear_dashboard_caches():
     st.cache_resource.clear()
 
 
-def synthetic_app(tmp_path, *, sources=6, empty=False, unavailable=False, known_score=False):
+def synthetic_app(tmp_path, *, sources=6, empty=False, unavailable=False, known_score=False,
+                 answer_error=False):
     """Substitute source/analysis boundaries; render the real main() unchanged."""
     root = tmp_path / "sources"
     paths = [root / "data" / f"Sample_Game_{g}" / f"Sample_Game_{g}_Raw{suffix}.csv"
@@ -68,6 +69,14 @@ def bundle(game, revision):
     return bundles[game]
 dashboard.load_bundle = bundle
 dashboard.load_report = lambda game, team, revision: reports[game, team]
+from soccer_tactics.agent.chat import ChatAnswer
+raise_answer_error = {answer_error!r}
+def fake_answer(context, question, history):
+    if raise_answer_error:
+        raise RuntimeError("Ollama is unavailable at localhost:11434")
+    citations = list(context.allowed_citation_ids[:1])
+    return ChatAnswer("answered", "fake answer", citations)
+dashboard.answer_question = fake_answer
 dashboard.main()
 '''
     return AppTest.from_string(script, default_timeout=30)
@@ -167,6 +176,33 @@ def test_match_team_switch_does_not_reuse_evidence(tmp_path):
     assert any("Evidence ID: 1:" in item.value for item in app.caption)
 
 
+def test_chat_citations_render_and_history_resets_when_match_or_team_changes(tmp_path):
+    app = synthetic_app(tmp_path).run()
+    app.selectbox(key="selected_team").select("home").run()
+    app.text_input(key="touchline_chat_question").set_value("What shaped the match?").run()
+    app.button(key="touchline_chat_submit").click().run()
+    assert not app.exception
+    assert any("Touchline · answered" in item.value for item in app.markdown)
+    assert any("source" in item.value and "frame" in item.value for item in app.caption)
+    assert len(app.session_state["_touchline_chat_history"]) == 2
+
+    app.selectbox(key="selected_match").select("metrica_2").run()
+    assert app.session_state["_touchline_chat_history"] == []
+    app.selectbox(key="selected_team").select("home").run()
+    assert app.session_state["_touchline_chat_history"] == []
+
+
+def test_local_chat_failure_keeps_dashboard_available(tmp_path):
+    app = synthetic_app(tmp_path, answer_error=True).run()
+    app.text_input(key="touchline_chat_question").set_value("Question while Ollama is offline").run()
+    app.button(key="touchline_chat_submit").click().run()
+
+    assert not app.exception
+    assert app.title[0].value == "What shaped the result?"
+    assert any("ollama serve" in item.value.lower() for item in app.caption)
+    assert any("Ollama is unavailable" in item.value for item in app.error)
+
+
 def test_idsse_selection_renders_source_origins_and_limitations(tmp_path):
     script = f'''
 import sys
@@ -180,7 +216,7 @@ dashboard.IDSSE_DATA = Path({str(tmp_path / "idsse")!r})
 dashboard.IDSSE_MANIFEST = Path({str(tmp_path / "manifest.json")!r})
 entry = CatalogEntry("IDSSE", "idsse_DFL-MAT-A1", str(dashboard.IDSSE_DATA), "IDSSE · DFL-MAT-A1", {{"home":"Home Label", "away":"Away Label"}}, True)
 dashboard.load_catalogue = lambda revision: [entry]
-origins = pd.DataFrame([{{"period":1,"team":"Away Label","event":"pass","source_code":"Play_Pass","source_timestamp":"2026-01-01T00:00:00Z","gameclock_s":2.0,"source_x_m":50.0,"source_y_m":20.0}}])
+origins = pd.DataFrame([{{"origin_id":"IDSSE:DFL-MAT-A1:000001","match_id":"DFL-MAT-A1","period":1,"team":"Away Label","event":"pass","source_code":"Play_Pass","source_timestamp":"2026-01-01T00:00:00Z","gameclock_s":2.0,"source_x_m":50.0,"source_y_m":20.0}}])
 dashboard.load_idsse_origin_report = lambda *args: (origins, {{"home":1,"away":0}}, entry.team_names, {{"event_capabilities":{{"pass_endpoints":False}}}}, {{"event_origin_count":1}})
 dashboard.main()
 '''
@@ -217,8 +253,13 @@ dashboard.load_catalogue = lambda revision: entries
 bundle, report = pickle.loads(Path({str(payload)!r}).read_bytes())
 dashboard.load_bundle = lambda game, revision: bundle
 dashboard.load_report = lambda game, team, revision: report
-origins = pd.DataFrame([{{"period":1,"team":"Away Label","event":"pass","source_code":"Play_Pass","source_timestamp":"2026-01-01T00:00:00Z","gameclock_s":2.0,"source_x_m":50.0,"source_y_m":20.0}}])
+origins = pd.DataFrame([{{"origin_id":"IDSSE:DFL-MAT-A1:000001","match_id":"DFL-MAT-A1","period":1,"team":"Away Label","event":"pass","source_code":"Play_Pass","source_timestamp":"2026-01-01T00:00:00Z","gameclock_s":2.0,"source_x_m":50.0,"source_y_m":20.0}}])
 dashboard.load_idsse_origin_report = lambda *args: (origins, {{"home":1,"away":0}}, entries[1].team_names, {{}}, {{}})
+from soccer_tactics.agent.chat import ChatAnswer
+def fake_answer(context, question, history):
+    citations = list(context.allowed_citation_ids[:1])
+    return ChatAnswer("answered", "fake answer", citations)
+dashboard.answer_question = fake_answer
 dashboard.analyze_match = lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("IDSSE called analyze_match"))
 def forbidden_during_idsse(name, original):
     def check(*args, **kwargs):
@@ -235,10 +276,15 @@ dashboard.main()
     assert not app.exception
     app.selectbox(key="selected_team").select("home").run()
     assert not app.exception and app.selectbox(key="selected_team").value == "home"
+    app.text_input(key="touchline_chat_question").set_value("List a source event.").run()
+    app.button(key="touchline_chat_submit").click().run()
+    assert len(app.session_state["_touchline_chat_history"]) == 2
     app.selectbox(key="selected_match").select("idsse_DFL-MAT-A1").run()
     assert not app.exception
+    assert app.session_state["_touchline_chat_history"] == []
     assert app.selectbox(key="selected_team").value == "away"
     assert app.title[0].value == "What the source records show"
+    assert any("tracking synchronization" in item.value.lower() for item in app.caption)
     assert not any("Evidence ID:" in item.value for item in app.caption)
     assert not app.slider and not app.checkbox
     app.selectbox(key="selected_team").select("home").run()

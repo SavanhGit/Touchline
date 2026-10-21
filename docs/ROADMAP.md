@@ -23,9 +23,11 @@ The IDSSE implementation is limited to an **origin-only IDSSE catalogue**. Seven
 
 This release preserves IDSSE source event coordinates, timestamps, and event-code provenance. IDSSE tracking synchronization, attack direction, pass endpoints, IDSSE xT and progression, and held-out IDSSE evaluation remain deferred. Metrica retains its existing endpoint-based analysis and training. IDSSE data is attributed to the Deutsche Fußball Liga (DFL) under CC BY 4.0. Citation: Bassek et al., “An integrated dataset of spatiotemporal and event data in elite soccer,” *Scientific Data* 12, 195 (2025), [doi:10.1038/s41597-025-04505-y](https://doi.org/10.1038/s41597-025-04505-y). See the [setup and source instructions](../README.md#optional-idsse-match-catalogue) and [validation notes](VALIDATION.md).
 
-## V3 — Question-answering agent
+## V3 — Local question-answering assistant
 
-Use the same report engine and evidence IDs as tools. Questions must be scoped to the selected match and team. Evaluate answers for numeric fidelity, evidence references, refusal of unsupported claims, and correct limits. Choose model provider and budget then; the dashboard remains usable without an API key. Replace shared global agent state with an explicit per-session analysis context before exposing chat.
+**Completed: 2026-10-21 12:50 PM EDT.** The optional Streamlit assistant uses local Ollama inference, defaults to `qwen3:8b`, supports `TOUCHLINE_OLLAMA_MODEL`, and never downloads models or calls a paid provider. Context-bound tools replace shared global agent state; Metrica responses use selected-report facts and citations, IDSSE responses remain limited to source event origins, and chat resets when the selected source, match, or team changes. See the [local assistant setup](../README.md#optional-local-match-assistant).
+
+Owner-machine acceptance used the real Metrica and IDSSE files and installed Qwen3 8B: the losing Metrica side's buildup result returned **22/76 (28.9%)** with a resolvable match-event citation; a guaranteed-win question was declined; IDSSE returned a factual source-origin answer with its source ID and declined pass-destination and event-to-tracking synchronization questions. The Streamlit app was exercised with the real catalogue, including a Metrica-to-IDSSE match change and chat-history reset. The full real-data suite passed **368 tests**, and release validation exported all four Metrica team reports with held-out matches used for xT training. Local model response quality remains sensitive to hardware and the selected model.
 
 ## V4 — Richer tactical analysis
 
