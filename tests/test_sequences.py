@@ -61,3 +61,31 @@ def test_no_transition_without_observed_opponent_event():
 def test_transition_never_crosses_period():
     e=ev([{"event_id":"loss","success":False},{"event_id":"next","team":"away","period":2,"time_s":1}])
     assert summarize_transitions(e,segment_possessions(e,pd.DataFrame()),pd.DataFrame()).empty
+
+
+def test_failed_pass_then_defensive_win_emits_one_transition_preferring_defense():
+    e=ev([{"event_id":"loss","success":False},
+          {"event_id":"win","team":"away","event":"tackle","time_s":1},
+          {"event_id":"keep","team":"away","time_s":2}])
+    t=summarize_transitions(e,segment_possessions(e,pd.DataFrame()),pd.DataFrame())
+    assert len(t)==1
+    assert t.iloc[0].source_turnover_event_id=="win"
+    assert t.iloc[0].event_ids==["win","keep"]
+
+
+def test_transition_events_are_limited_to_selected_possession():
+    e=ev([{"event_id":"win","event":"recovery"},
+          {"event_id":"opp","team":"away","time_s":1},
+          {"event_id":"later","team":"home","time_s":1}])
+    t=summarize_transitions(e,segment_possessions(e,pd.DataFrame()),pd.DataFrame())
+    assert len(t)==1
+    assert t.iloc[0].event_ids==["win"]
+
+
+def test_defensive_transition_clips_exact_window_and_just_after():
+    e=ev([{"event_id":"win","event":"interception"},
+          {"event_id":"boundary","time_s":10},
+          {"event_id":"after","time_s":10.001}])
+    t=summarize_transitions(e,segment_possessions(e,pd.DataFrame()),pd.DataFrame())
+    assert t.iloc[0].event_ids==["win","boundary"]
+    assert t.iloc[0].end_time_s==10

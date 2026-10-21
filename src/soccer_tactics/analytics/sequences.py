@@ -76,37 +76,51 @@ def summarize_transitions(events: pd.DataFrame, possessions: pd.DataFrame, pass_
         return _empty(TRANSITION_COLUMNS)
     metrics = _metric_lookup(pass_metrics)
     source = events.reset_index(drop=True)
-    rows = []
-    starts = []
+    # A transition is identified by the observed possession it starts. Several triggers
+    # can point to that possession; a successful defensive action is the stronger source.
+    candidates = {}
     for i, r in enumerate(source.itertuples(index=False)):
+        triggers = []
         if r.event in DEFENSE and bool(r.success):
-            starts.append((i, r.event_id, True))
+            triggers.append((i, r.event_id, True, True))
         elif r.event == "pass" and not bool(r.success):
-            for j in range(i+1, len(source)):
+            for j in range(i + 1, len(source)):
                 q = source.iloc[j]
                 if (q.match_id, q.period) != (r.match_id, r.period):
                     break
                 if q.team != r.team:
                     if float(q.time_s) <= float(r.time_s) + window_s:
-                        starts.append((j, r.event_id, False))
+                        triggers.append((j, r.event_id, False, False))
                     break
-    for start_i, turnover_id, require_following in starts:
+        for start_i, source_id, require_following, is_defensive in triggers:
+            start = source.iloc[start_i]
+            matches = possessions[(possessions.match_id == start.match_id) &
+                (possessions.period == start.period) & (possessions.team == start.team) &
+                possessions.event_ids.map(lambda ids: start.event_id in ids)]
+            if matches.empty:
+                continue
+            possession = matches.iloc[0]
+            key = (possession.match_id, possession.period, possession.team, possession.possession_id)
+            existing = candidates.get(key)
+            candidate = (start_i, source_id, require_following, possession, is_defensive)
+            if existing is None or (is_defensive and not existing[4]):
+                candidates[key] = candidate
+
+    rows = []
+    for start_i, turnover_id, require_following, possession, _ in candidates.values():
         start = source.iloc[start_i]
-        observed_following = source[(source.index > start_i) & (source.match_id == start.match_id) &
-            (source.period == start.period) & (source.time_s <= float(start.time_s) + window_s)]
-        if require_following and observed_following.empty:
-            continue
+        limit = float(start.time_s) + window_s
+        if require_following:
+            following = source[(source.index > start_i) & (source.match_id == start.match_id) &
+                (source.period == start.period) & (source.time_s <= limit)]
+            if following.empty:
+                continue
+        # Restrict to this possession before clipping by clock. Time alone can pick up
+        # a later possession when distinct events share the same timestamp.
+        possession_ids = set(possession.event_ids)
         later = source[(source.index >= start_i) & (source.match_id == start.match_id) &
-                       (source.period == start.period) & (source.team == start.team) &
-                       (source.time_s <= float(start.time_s) + window_s)]
-        own_poss = possessions[(possessions.match_id == start.match_id) &
-                               (possessions.period == start.period) & (possessions.team == start.team)]
-        if own_poss.empty:
-            continue
-        pos = own_poss[own_poss.event_ids.map(lambda ids: start.event_id in ids)]
-        if not pos.empty:
-            end = pos.iloc[0].end_time_s
-            later = later[later.time_s <= end]
+            (source.period == start.period) & (source.event_id.isin(possession_ids)) &
+            (source.time_s <= limit)]
         if later.empty:
             continue
         ids = later.event_id.tolist()
