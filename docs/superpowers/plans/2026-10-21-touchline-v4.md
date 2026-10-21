@@ -6,7 +6,7 @@
 
 **Architecture:** Extend the existing Metrica loader for the third public match and recognized defensive events, then build sequence analytics independent from Streamlit. Enrich `MatchReport` and its citations before integrating dashboard panels and chat tools. Keep IDSSE origin-only and use match-level holdouts for validation.
 
-**Tech Stack:** Python 3.10+, pandas, NumPy, pytest, Streamlit, Plotly, optional Kloppy EPTS adapter.
+**Tech Stack:** Python 3.10+, pandas, NumPy, pytest, Streamlit, Plotly, optional `kloppy>=3.17,<4` EPTS adapter.
 
 **Spec:** `docs/superpowers/specs/2026-10-21-touchline-v4-design.md`
 
@@ -36,10 +36,10 @@
 
 **Files:** `src/soccer_tactics/loaders/metrica.py`, `src/soccer_tactics/loaders/catalog.py`, `src/soccer_tactics/loaders/bundle.py`, `src/soccer_tactics/schema.py`, `pyproject.toml`, focused loader tests.
 
-**Interfaces:** Preserve `load_metrica_game(root, game)` return compatibility. Add Game 3 through `load_metrica_bundle(root, game=3)` and the catalogue, using a documented optional `metrica-epts` extra. The canonical event types remain `pass`, `shot`, `tackle`, `interception`, and `recovery`; do not add ambiguous source subtypes.
+**Interfaces:** Preserve `load_metrica_game(root, game)` return compatibility. Add Game 3 through `load_metrica_bundle(root, game=3)` and the catalogue. Add optional extra `[metrica-epts] = ["kloppy>=3.17,<4"]`; local loading must not fetch source files. The canonical event types remain `pass`, `shot`, `tackle`, `interception`, and `recovery`; do not add ambiguous source subtypes.
 
-- [ ] Add failing tests for local Game 3 metadata/score, aligned tracking and events, event direction, sample-rate metadata, and catalogue inclusion.
-- [ ] Add table-driven raw-event tests for recognized defensive subtypes and excluded ambiguous/foul/block subtypes, including quality counts.
+- [ ] Add failing tests `test_game3_epts_to_canonical_bundle`, `test_game3_event_clocks_align_to_tracking`, and `test_game3_catalogue_includes_only_complete_sources`; assert source score is 0–2, canonical columns validate, and event orientation agrees with tracking.
+- [ ] Add `test_defensive_event_subtype_mapping` and `test_ambiguous_defensive_events_are_excluded_and_counted` for the documented accepted/rejected subtype mapping.
 - [ ] Implement Game 3 EPTS/event loading through Kloppy’s Metrica loaders and map both sources into the existing canonical bundle.
 - [ ] Extend CSV Metrica loading to retain only explicitly recognized challenges/recoveries while preserving existing pass, penalty, goal, and orientation behavior.
 - [ ] Run focused loader and schema tests, then all tests that do not require optional dependency; commit `feat: load third Metrica match and defensive events`.
@@ -48,10 +48,10 @@
 
 **Files:** create `src/soccer_tactics/analytics/sequences.py`; create `tests/test_sequences.py`.
 
-**Interfaces:** `segment_possessions(events: pd.DataFrame) -> pd.DataFrame`; `summarize_transitions(events: pd.DataFrame, window_s: float = 10.0) -> pd.DataFrame`. Inputs are canonical Metrica events with stable event IDs. Output rows include match, period, team, clocks, source event IDs, terminal reason, duration, completed final-third entries, shots, and available xT totals.
+**Interfaces:** `segment_possessions(events: pd.DataFrame, pass_metrics: pd.DataFrame) -> pd.DataFrame`; `summarize_transitions(events: pd.DataFrame, possessions: pd.DataFrame, pass_metrics: pd.DataFrame, window_s: float = 10.0) -> pd.DataFrame`. Inputs are same-match canonical events with stable event IDs and the `analyze_match` pass table with `event_id`, `entry`, and `success`. Possession output columns: `match_id`, `period`, `team`, `possession_id`, `start_time_s`, `end_time_s`, `start_event_id`, `end_event_id`, `event_ids`, `terminal_reason`, `duration_s`, `passes`, `completed_passes`, `final_third_entries`, `shots`, `goals`. Transition output columns: `match_id`, `period`, `team`, `transition_id`, `start_time_s`, `end_time_s`, `source_turnover_event_id`, `event_ids`, `final_third_entries`, `shots`, `goals`, `window_s`. Neither sequence table claims xT or shot quality.
 
-- [ ] Write hand-computed tests for ordinary possession, turnover, shot, successful defense, event ordering, same-frame ordering, period and match isolation, and empty input.
-- [ ] Write transition tests at exactly 10 seconds, just over 10 seconds, following a successful defense, and at a period boundary.
+- [ ] Add `test_possession_counts_and_terminal_reason_hand_calculation`, `test_failed_pass_and_successful_defense_split_possessions`, `test_same_frame_order_is_stable`, `test_possessions_never_cross_period_or_match`, and `test_empty_events_return_empty_tables`.
+- [ ] Add `test_transition_includes_exact_window_boundary`, `test_transition_excludes_event_after_window`, `test_transition_starts_at_successful_defensive_action`, `test_no_transition_without_observed_opponent_event`, and `test_transition_never_crosses_period`.
 - [ ] Run focused tests to establish the expected failures.
 - [ ] Implement deterministic segmentation and transition windows without inferring carries or causal shot sequences.
 - [ ] Run tests and commit `feat: model observed possessions and transitions`.
@@ -62,9 +62,9 @@
 
 **Interfaces:** Preserve existing `analyze_match(match_bundle, team, training_matches) -> MatchReport` call shape and existing fields. Add `possessions`, `transitions`, `defensive_actions`, and `shot_summaries` report fields. Keep existing report fields positional-compatible by appending defaults. Each evidence item references a source match, period, frame, and timestamp.
 
-- [ ] Add hand-computed tests for possession/transition team comparisons, defensive counts and exposure, shot channel counts/goals, evidence IDs, and existing three-finding ceiling.
-- [ ] Add tests that selected-match xT never trains on the selected match and that training uses all other validated Metrica matches available.
-- [ ] Add tests for unknown scores, no defensive events, low shot counts, and insufficient pattern evidence.
+- [ ] Add `test_report_v4_summaries_match_hand_calculated_counts`, `test_defensive_actions_per_90_use_observed_tracking_exposure`, `test_shots_are_summarized_by_attacking_channel`, and `test_findings_stay_capped_at_three_with_stable_ties`.
+- [ ] Add `test_held_out_match_never_trains_its_xt_grid` and `test_all_other_catalogued_metrica_matches_train_report` for Games 1–3.
+- [ ] Add `test_unknown_score_and_empty_defense_are_explicit`, `test_low_shot_count_has_no_quality_claim`, and `test_insufficient_pattern_evidence_returns_fewer_findings`.
 - [ ] Integrate the sequence outputs, defensive-action summaries, and shot-location/outcome summaries; do not add a learned shot-quality model.
 - [ ] Add deterministic findings only when source-backed thresholds are met; every suggestion includes citations and a tradeoff, and no claim establishes causation.
 - [ ] Run focused report/impact/agent-tool tests and commit `feat: add evidence-backed V4 report metrics`.
@@ -73,10 +73,10 @@
 
 **Files:** `app.py`, `src/soccer_tactics/dashboard/charts.py`, `src/soccer_tactics/agent/tools.py`, `src/soccer_tactics/agent/chat.py`, dashboard and chat tests.
 
-**Interfaces:** Add V4 report facts to context-bound Metrica tools only. Preserve IDSSE’s existing origin-only tool contract. Dashboard match selection uses the current validated Metrica catalogue, and chat citations are restricted to active report evidence.
+**Interfaces:** Add `sequence_summary`, `defensive_summary`, and `shot_summary` to context-bound Metrica tools only, each returning the report's allowed `citation_ids`. Preserve IDSSE’s existing origin-only tool contract. Dashboard match selection uses the current validated Metrica catalogue, and chat citations are restricted to active report evidence.
 
-- [ ] Add dashboard tests for possession/transition navigation, defensive and shot summaries, empty data, and source switching.
-- [ ] Add chat tests for V4 fact retrieval, evidence citations, match/team isolation, and causal-question abstention.
+- [ ] Add `test_dashboard_v4_sections_render_for_metrica`, `test_dashboard_v4_empty_summaries_are_explained`, and `test_idsse_stays_origin_only_after_v4`.
+- [ ] Add `test_chat_returns_cited_v4_report_facts`, `test_v4_chat_citations_follow_selected_match_and_team`, and `test_chat_abstains_on_causal_transition_question`.
 - [ ] Add views for possession/transition sequence evidence, defensive actions, and shot location/outcomes with sample counts and nearby limitations.
 - [ ] Expose the new report facts through local tools and validate all returned citations against the selected context.
 - [ ] Smoke-test both teams across Metrica Games 1–3; commit `feat: expose V4 analysis in dashboard and chat`.

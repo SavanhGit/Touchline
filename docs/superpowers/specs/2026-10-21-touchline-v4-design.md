@@ -38,3 +38,6 @@ Help a user inspect match patterns that may have contributed to a result and exp
 - A transition begins on a successful tackle/interception/recovery row, or at the first opponent event after an unsuccessful pass. If the opponent has no observed event within 10 seconds or before period end, no transition row is emitted. No transition bridges periods or matches.
 - Candidate findings use a denominator of at least five and at least three events supporting the highlighted pattern. Keep at most one finding per category, rank by supporting-event count descending with stable category order (`transition`, `defense`, `buildup`, `progression`, `danger`), then return at most three. This is a display rule, not a significance test.
 - The optional dependency extra is `[metrica-epts]`; it contains Kloppy. Game 3 loading consumes local files only and raises an actionable optional-dependency error if the extra is missing.
+
+
+The supported optional dependency range is `kloppy>=3.17,<4`, based on the Metrica EPTS/event loader interface and Python 3.10 compatibility.
