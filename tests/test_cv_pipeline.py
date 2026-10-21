@@ -137,3 +137,33 @@ def test_callback_failure_removes_partial_overlay(media, tmp_path):
         run_video_tracking(source, VideoTrackingConfig('clip', True), backend=backend,
             tracker=SimpleNamespace(update=lambda *a: []), work_dir=tmp_path / 'work', on_progress=callback)
     assert not list((tmp_path / 'work').iterdir())
+
+
+@pytest.mark.parametrize('threshold,emitted,rejected', [(.05, 5, 0), (.25, 0, 5)])
+def test_model_low_scores_reach_pipeline_confidence_gate(media, monkeypatch, tmp_path,
+    threshold, emitted, rejected):
+    from soccer_tactics.cv import pipeline
+    from soccer_tactics.cv.roboflow_backend import RoboflowVideoBackend
+    _, source = media
+    class Tensor:
+        def __init__(self, data): self.data = np.array(data)
+        def cpu(self): return self
+        def numpy(self): return self.data
+    def model(frame, **kwargs):
+        # Model double mirrors Ultralytics' threshold behavior, so its default
+        # 0.25 would silently discard this player before pipeline diagnostics.
+        keep = kwargs.get('conf', .25) <= .1
+        return [SimpleNamespace(names={2: 'player'}, boxes=SimpleNamespace(
+            xyxy=Tensor([[0, 0, 2, 4]] if keep else []),
+            conf=Tensor([.1] if keep else []), cls=Tensor([2] if keep else [])))]
+    backend = RoboflowVideoBackend(model, None)
+    monkeypatch.setattr(backend, 'detect_pitch_landmarks', lambda frame:
+        PitchLandmarks(np.zeros((4, 2)), np.zeros((4, 2)), np.ones(4)))
+    monkeypatch.setattr(pipeline, 'estimate_calibration', lambda *a, **kw:
+        CalibrationResult(True, np.eye(3), 4, 0., None))
+    tracker = SimpleNamespace(update=lambda index, detections: [
+        TrackedPlayer(index, '3', d.bbox_xyxy, d.confidence, d.class_name) for d in detections])
+    result = pipeline.run_video_tracking(source, VideoTrackingConfig('clip', True,
+        min_player_confidence=threshold), backend=backend, tracker=tracker, work_dir=tmp_path / 'work')
+    assert len(result.detections) == emitted
+    assert result.frame_diagnostics.low_confidence_players.sum() == rejected

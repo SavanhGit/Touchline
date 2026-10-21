@@ -60,3 +60,17 @@ def test_explicit_downloader_fetches_two_weights_only(monkeypatch, tmp_path):
     assert sorted(p.name for p in tmp_path.iterdir()) == ['football-pitch-detection.pt', 'football-player-detection.pt']
     module.main()
     assert len(calls) == 2
+
+
+def test_detector_requests_all_scores_for_pipeline_confidence_filtering():
+    from soccer_tactics.cv.roboflow_backend import RoboflowVideoBackend
+    class Tensor:
+        def __init__(self, data): self.data = np.array(data)
+        def cpu(self): return self
+        def numpy(self): return self.data
+    def model(frame, **kwargs):
+        assert kwargs['conf'] == 0.0
+        return [SimpleNamespace(names={2: 'player'}, boxes=SimpleNamespace(
+            xyxy=Tensor([[0, 0, 2, 4]]), conf=Tensor([.1]), cls=Tensor([2])))]
+    backend = RoboflowVideoBackend(model, None)
+    assert backend.detect_players(np.zeros((4, 4, 3)))[0].confidence == .1

@@ -60,7 +60,9 @@ class RoboflowVideoBackend:
         return cls(YOLO(str(paths[0])), YOLO(str(paths[1])), device, provenance)
 
     def detect_players(self, frame: np.ndarray) -> list[PlayerDetection]:
-        result = self.player_model(frame, device=self.device, imgsz=1280, verbose=False)[0]
+        # Confidence belongs to the pipeline config and rejection diagnostics.
+        # Ultralytics otherwise silently drops scores below its 0.25 default.
+        result = self.player_model(frame, device=self.device, imgsz=1280, conf=0.0, verbose=False)[0]
         if result.boxes is None:
             return []
         boxes = result.boxes
