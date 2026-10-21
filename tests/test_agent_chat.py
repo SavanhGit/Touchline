@@ -257,3 +257,66 @@ def test_chat_abstains_on_causal_transition_question():
     answer = answer_question(_context(), "Did the transition cause the later shot?", client=client)
     assert answer.status == "unsupported" and answer.citation_ids == []
     assert not client.calls
+
+
+@pytest.mark.parametrize("question", [
+    "Did the turnover lead to the later shot?",
+    "Did the transition result in the goal?",
+    "Was the shot because of the turnover?",
+    "Was the goal due to that transition?",
+])
+def test_causal_question_paraphrases_abstain_before_model_call(question):
+    reply = {"message": {"content": json.dumps({"status": "answered",
+        "text": "The turnover caused the later shot.", "citation_ids": ["m1:1:12:0"]})}}
+    client = SequenceClient([reply])
+    answer = answer_question(_context(), question, client=client)
+    assert answer.status == "unsupported" and answer.citation_ids == []
+    assert not client.calls
+
+
+@pytest.mark.parametrize("claim", [
+    "The turnover caused the later shot.",
+    "The turnover led to the later shot.",
+    "The transition resulted in the goal.",
+    "The goal resulted from the transition.",
+    "They conceded because they lost possession.",
+    "The shot was due to the turnover.",
+])
+@pytest.mark.parametrize("final_response", [False, True])
+def test_causal_model_claims_are_declined_even_for_noncausal_questions(claim, final_response):
+    reply = {"message": {"content": json.dumps({"status": "answered", "text": claim,
+        "citation_ids": ["m1:1:12:0"]})}}
+    replies = [{"message": {"content": "Not JSON yet."}}, reply] if final_response else [reply]
+    answer = answer_question(_context(), "What happened next?", client=SequenceClient(replies))
+    assert answer.status == "unsupported" and answer.citation_ids == []
+    assert answer.text != claim
+
+
+@pytest.mark.parametrize("event_type", ["shot", "tackle"])
+def test_every_displayed_nested_v4_summary_citation_is_usable(event_type):
+    from factories import make_bundle
+    from soccer_tactics.analytics.report import analyze_match
+    from soccer_tactics.dashboard.chat import build_metrica_context
+    bundle = make_bundle("v4")
+    bundle.events.loc[bundle.events.event == "shot", "y0"] = -20.
+    bundle.events.loc[bundle.events.event == "shot", "event"] = event_type
+    report = analyze_match(bundle, "away", [make_bundle("training")])
+    report.findings.clear()
+    context = build_metrica_context(report)
+    # The fourth source event is visible in the nested summary but was omitted
+    # from the old three-ID initial allowlist; it is not a sequence boundary.
+    cid = [e.event_id for e in report.event_evidence if e.team == "away"][3]
+    reply = {"message": {"content": json.dumps({"status": "answered", "text": "Five actions recorded.",
+        "citation_ids": [cid]})}}
+    client = SequenceClient([reply, reply])
+    answer = answer_question(context, "How many actions?", client=client)
+    assert answer.status == "answered" and answer.citation_ids == [cid]
+    fact_message = next(m["content"] for m in client.calls[0]["messages"]
+                        if "Verified selected-report facts" in m.get("content", ""))
+    facts = json.loads(fact_message.split("Verified selected-report facts (JSON): ", 1)[1]
+                       .split(" Use these values exactly", 1)[0])
+    summary = facts["shot_summary" if event_type == "shot" else "defensive_summary"]
+    rows = summary["shot_summaries" if event_type == "shot" else "defensive_actions"]
+    displayed_ids = {cid for row in rows for cid in row["event_ids"]}
+    assert displayed_ids <= set(summary["citation_ids"])
+    assert displayed_ids <= set(context.allowed_citation_ids)

@@ -24,6 +24,17 @@ ANSWER_FORMAT = {
 MAX_TOOL_ROUNDS = 4
 MAX_TOOL_CALLS = 8
 
+# A conservative language guard supplements the model's evidence instructions.
+# Apply it to both questions and returned text: citations identify observations,
+# but cannot validate a causal relationship between those observations.
+_CAUSAL_LANGUAGE = re.compile(
+    r"\b(?:cause[sd]?|causing|causal(?:ity|ly)?|causation)\b"
+    r"|\b(?:lead(?:s|ing)?|led)\s+to\b"
+    r"|\bresult(?:s|ed|ing)?\s+(?:in|from)\b"
+    r"|\bbecause\b|\bdue\s+to\b|\bresponsible\s+for\b"
+    r"|\battribut(?:e[sd]?|ing|able)\b", re.I,
+)
+
 
 @dataclass(frozen=True)
 class ChatAnswer:
@@ -93,6 +104,10 @@ def _withhold(message: str = "I can't verify that answer from the selected match
     return ChatAnswer("withheld", message, [])
 
 
+def _causal_abstention() -> ChatAnswer:
+    return ChatAnswer("unsupported", "The selected match evidence cannot establish causation or guarantee a different result.", [])
+
+
 def _report_facts(context: AnalysisContext) -> tuple[dict[str, Any], set[str]]:
     """Make the selected report's small, trusted fact set visible to local models.
 
@@ -123,7 +138,9 @@ def _report_facts(context: AnalysisContext) -> tuple[dict[str, Any], set[str]]:
         if name == "sequence_summary":
             result.pop("possessions", None)
             result.pop("transitions", None)
-        result["citation_ids"] = result["citation_ids"][:3]
+            result["citation_ids"] = result["citation_ids"][:3]
+        # Shot/defense rows retain their source IDs; every displayed ID must
+        # remain citeable, even when it lies beyond the first three events.
         player_ids.update(result["citation_ids"])
     return {
         **v4,
@@ -157,6 +174,8 @@ def _parse_answer(content: Any, allowed_ids: set[str]) -> ChatAnswer:
         return _withhold()
     if status == "answered" and not citation_ids:
         return _withhold()
+    if _CAUSAL_LANGUAGE.search(text):
+        return _causal_abstention()
     return ChatAnswer(status, text.strip(), citation_ids)
 
 
@@ -174,9 +193,8 @@ def answer_question(
     """
     if not isinstance(question, str) or not question.strip():
         raise ValueError("question cannot be empty")
-    if (re.search(r"\b(transition|turnover)s?\b", question, re.I)
-            and re.search(r"\b(cause|caused|causes|causing)\b", question, re.I)):
-        return ChatAnswer("unsupported", "Observed transitions cannot establish that a turnover or transition caused a later shot or goal.", [])
+    if _CAUSAL_LANGUAGE.search(question):
+        return _causal_abstention()
     client = client or OllamaChatClient()
     messages = [{"role": "system", "content": _system_prompt(context)}]
     report_facts, verified_ids = _report_facts(context)
