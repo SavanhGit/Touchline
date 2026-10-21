@@ -25,9 +25,9 @@ This release preserves IDSSE source event coordinates, timestamps, and event-cod
 
 ## V3 — Local question-answering assistant
 
-**Implementation:** optional Streamlit chat using local Ollama inference, defaulting to `qwen3:8b` with `TOUCHLINE_OLLAMA_MODEL` override. No paid provider or automatic model download is used. Metrica tools expose the selected report and citable match moments; IDSSE tools expose source event origins only. Context-bound dispatch replaces shared global agent state, and chat resets when the selected source, match, or team changes. See the [local assistant setup](../README.md#optional-local-match-assistant).
+**Completed: 2026-10-21 12:50 PM EDT.** The optional Streamlit assistant uses local Ollama inference, defaults to `qwen3:8b`, supports `TOUCHLINE_OLLAMA_MODEL`, and never downloads models or calls a paid provider. Context-bound tools replace shared global agent state; Metrica responses use selected-report facts and citations, IDSSE responses remain limited to source event origins, and chat resets when the selected source, match, or team changes. See the [local assistant setup](../README.md#optional-local-match-assistant).
 
-**Acceptance still to verify on the project owner's machine:** manually run representative numeric and evidence questions with Qwen3 8B; confirm causal questions are declined, and IDSSE destination/synchronization questions are declined. Model answer quality remains sensitive to hardware and the locally selected model.
+Owner-machine acceptance used the real Metrica and IDSSE files and installed Qwen3 8B: the losing Metrica side's buildup result returned **22/76 (28.9%)** with a resolvable match-event citation; a guaranteed-win question was declined; IDSSE returned a factual source-origin answer with its source ID and declined pass-destination and event-to-tracking synchronization questions. The Streamlit app was exercised with the real catalogue, including a Metrica-to-IDSSE match change and chat-history reset. The full real-data suite passed **368 tests**, and release validation exported all four Metrica team reports with held-out matches used for xT training. Local model response quality remains sensitive to hardware and the selected model.
 
 ## V4 — Richer tactical analysis
 

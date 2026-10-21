@@ -32,6 +32,7 @@ def test_answer_question_runs_context_tool_then_validates_structured_citations()
         {"message": {"role": "assistant", "tool_calls": [{"function": {
             "name": "team_findings", "arguments": {},
         }}]}},
+        {"message": {"role": "assistant", "content": "I found the report findings."}},
         {"message": {"role": "assistant", "content": '{"status":"answered","text":"Four of five passes did not enter.","citation_ids":["m1:1:12:0"]}'}},
     ])
 
@@ -42,15 +43,35 @@ def test_answer_question_runs_context_tool_then_validates_structured_citations()
     assert [tool["function"]["name"] for tool in client.calls[0]["tools"]] == [
         "match_summary", "team_findings", "player_metrics", "evidence_lookup",
     ]
-    assert client.calls[0]["format"]["required"] == ["status", "text", "citation_ids"]
-    assert client.calls[1]["messages"][-1]["role"] == "tool"
-    assert "m1:1:12:0" in client.calls[1]["messages"][-1]["content"]
+    assert client.calls[0]["format"] is None
+    tool_messages = [message for message in client.calls[1]["messages"]
+                     if message.get("role") == "tool"]
+    assert tool_messages
+    assert "m1:1:12:0" in tool_messages[0]["content"]
+    assert client.calls[2]["format"]["required"] == ["status", "text", "citation_ids"]
+
+
+def test_answer_question_includes_precomputed_report_facts_before_inference():
+    client = SequenceClient([{"message": {"content": "Not JSON yet."}}, {
+        "message": {"content": '{"status":"answered","text":"Four of five passes.","citation_ids":["m1:1:12:0"]}'},
+    }])
+
+    answer = answer_question(_context(), "How many passes did not enter?", [], client)
+
+    assert answer.status == "answered"
+    facts = client.calls[1]["messages"]
+    fact_message = next(message["content"] for message in facts
+                        if message.get("role") == "system" and "Verified selected-report facts" in message.get("content", ""))
+    assert "denominator" in fact_message
+    assert "m1:1:12:0" in fact_message
+    assert client.calls[1]["format"]["required"] == ["status", "text", "citation_ids"]
 
 
 def test_answer_question_withholds_unverifiable_citations():
-    client = SequenceClient([{"message": {"content":
+    invalid = {"message": {"content":
         '{"status":"answered","text":"They lost because of player X.","citation_ids":["foreign:1"]}'
-    }}])
+    }}
+    client = SequenceClient([invalid, invalid])
 
     answer = answer_question(_context(), "Why did we lose?", [], client)
 
@@ -72,9 +93,10 @@ def test_answer_question_allows_careful_unsupported_response_without_citations()
 
 def test_answer_question_withholds_malformed_status_types():
     for malformed_status in ([], {}, None):
-        client = SequenceClient([{"message": {"content": json.dumps({
+        malformed = {"message": {"content": json.dumps({
             "status": malformed_status, "text": "Unsupported format.", "citation_ids": [],
-        })}}])
+        })}}
+        client = SequenceClient([malformed, malformed])
         answer = answer_question(_context(), "What happened?", [], client)
         assert answer.status == "withheld"
 
@@ -86,14 +108,21 @@ def test_idsse_chat_only_receives_origin_lookup_tool():
         "source_timestamp": "2020-01-01T00:00:00Z", "gameclock_s": 12.,
         "source_x_m": 10., "source_y_m": 20., "x_m": -40., "y_m": -14.,
     }]), allowed_citation_ids=("IDSSE:i1:000001",))
-    client = SequenceClient([{"message": {"content":
-        '{"status":"answered","text":"One pass origin is recorded.","citation_ids":["IDSSE:i1:000001"]}'
-    }}])
+    client = SequenceClient([
+        {"message": {"tool_calls": [{"function": {
+            "name": "origin_lookup", "arguments": {"event": "pass"},
+        }}]}},
+        {"message": {"content": "I found one source record."}},
+        {"message": {"content":
+            '{"status":"answered","text":"One pass origin is recorded.","citation_ids":["IDSSE:i1:000001"]}'
+        }},
+    ])
 
     answer = answer_question(context, "What is recorded?", [], client)
 
     assert answer.status == "answered"
     assert [tool["function"]["name"] for tool in client.calls[0]["tools"]] == ["origin_lookup"]
+    assert client.calls[-1]["format"]["required"] == ["status", "text", "citation_ids"]
 
 
 def test_idsse_context_rejects_opponent_citation_allowlist():

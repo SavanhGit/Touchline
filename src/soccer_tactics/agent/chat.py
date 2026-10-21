@@ -92,6 +92,36 @@ def _withhold(message: str = "I can't verify that answer from the selected match
     return ChatAnswer("withheld", message, [])
 
 
+def _report_facts(context: AnalysisContext) -> tuple[dict[str, Any], set[str]]:
+    """Make the selected report's small, trusted fact set visible to local models.
+
+    Some local models return a final response instead of requesting tools. Supplying
+    these already-computed report facts keeps common numeric questions grounded;
+    source lookups and other on-demand queries still use the context-bound tools.
+    """
+    if not context.is_metrica:
+        return {}, set()
+    summary = call_tool(context, "match_summary", {})
+    summary.pop("citation_ids", None)
+    findings = call_tool(context, "team_findings", {})
+    players = call_tool(context, "player_metrics", {"n": 10})
+    # Keep the initial context concise while retaining a moment for each player.
+    player_ids: set[str] = set()
+    for row in players.get("rows", []):
+        row["citation_ids"] = row.get("citation_ids", [])[:3]
+        player_ids.update(row["citation_ids"])
+    players["citation_ids"] = sorted(player_ids)
+    finding_ids = {
+        citation_id for finding in findings.get("findings", [])
+        for citation_id in finding.get("evidence_ids", [])
+    }
+    return {
+        "match_summary": summary,
+        "team_findings": findings,
+        "player_metrics": players,
+    }, finding_ids | player_ids
+
+
 def _parse_answer(content: Any, allowed_ids: set[str]) -> ChatAnswer:
     if not isinstance(content, str):
         return _withhold()
@@ -135,6 +165,17 @@ def answer_question(
         raise ValueError("question cannot be empty")
     client = client or OllamaChatClient()
     messages = [{"role": "system", "content": _system_prompt(context)}]
+    report_facts, verified_ids = _report_facts(context)
+    if report_facts:
+        messages.append({
+            "role": "system",
+            "content": (
+                "Verified selected-report facts (JSON): "
+                + json.dumps(report_facts, ensure_ascii=False, allow_nan=False)
+                + " Use these values exactly for match measurements. Cite only evidence IDs "
+                  "included here or retrieved through an analytics tool."
+            ),
+        })
     for message in history:
         if (not isinstance(message, Mapping)
                 or message.get("role") not in {"user", "assistant"}
@@ -143,11 +184,12 @@ def answer_question(
         messages.append({"role": message["role"], "content": message["content"]})
     messages.append({"role": "user", "content": question.strip()})
 
-    available_ids = set(context.allowed_citation_ids)
     tools = _ollama_tools(context)
     tool_call_count = 0
     for _ in range(MAX_TOOL_ROUNDS):
-        response = client.chat(messages, tools=tools, format=ANSWER_FORMAT)
+        # Do not combine Ollama's tool-call phase with constrained JSON output.
+        # Qwen3 otherwise tends to skip tools and invent report values/IDs.
+        response = client.chat(messages, tools=tools)
         model_message = response.get("message") if isinstance(response, Mapping) else None
         if not isinstance(model_message, Mapping):
             return _withhold()
@@ -155,7 +197,10 @@ def answer_question(
         if not isinstance(calls, list):
             return _withhold()
         if not calls:
-            return _parse_answer(model_message.get("content"), available_ids)
+            preliminary = _parse_answer(model_message.get("content"), verified_ids)
+            if preliminary.status != "withheld":
+                return preliminary
+            break
         tool_call_count += len(calls)
         if tool_call_count > MAX_TOOL_CALLS:
             return _withhold("I couldn't complete a bounded evidence lookup for that question.")
@@ -169,10 +214,25 @@ def answer_question(
                 name, arguments = _tool_call_data(call)
                 result = call_tool(context, name, arguments)
                 content = json.dumps(result, ensure_ascii=False, allow_nan=False)
+                returned_ids = result.get("citation_ids", [])
+                if isinstance(returned_ids, list):
+                    verified_ids.update(value for value in returned_ids if isinstance(value, str))
             except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
                 content = json.dumps({"error": str(exc)[:240]}, ensure_ascii=False)
                 function = call.get("function") if isinstance(call, Mapping) else None
                 name = function.get("name", "unknown") if isinstance(function, Mapping) else "unknown"
             messages.append({"role": "tool", "tool_name": name, "content": content})
-    return _withhold("I couldn't complete the evidence lookup within the allowed number of steps.")
+    else:
+        return _withhold("I couldn't complete the evidence lookup within the allowed number of steps.")
+
+    messages.append({
+        "role": "system",
+        "content": "Return the final answer now using the required JSON schema. "
+                   "Cite only source IDs present in the verified report facts or tool results.",
+    })
+    final_response = client.chat(messages, format=ANSWER_FORMAT)
+    final_message = final_response.get("message") if isinstance(final_response, Mapping) else None
+    if not isinstance(final_message, Mapping):
+        return _withhold()
+    return _parse_answer(final_message.get("content"), verified_ids)
 
