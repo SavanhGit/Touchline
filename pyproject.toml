@@ -17,7 +17,11 @@ dependencies = [
 dev = ["pytest>=8", "scipy>=1.11"]
 dashboard = ["streamlit>=1.40,<2", "plotly>=5.24,<8"]
 demo = ["imageio>=2.35", "imageio-ffmpeg>=0.6", "pillow>=10"]
-cv = ["supervision", "ultralytics", "opencv-python"]
+cv = [
+    "supervision>=0.29.1,<0.30", "ultralytics>=8.4.183,<8.5",
+    "opencv-python>=5.0,<6", "torch>=2.14.1,<2.15",
+    "torchvision>=0.29.1,<0.30", "gdown>=5.2,<6",
+]
 idsse = ["floodlight>=1.2.0"]
 metrica-epts = ["kloppy>=3.17,<4"]
 
