@@ -50,14 +50,14 @@
 
 **Interfaces:** `segment_possessions(events: pd.DataFrame, pass_metrics: pd.DataFrame) -> pd.DataFrame`; `summarize_transitions(events: pd.DataFrame, possessions: pd.DataFrame, pass_metrics: pd.DataFrame, window_s: float = 10.0) -> pd.DataFrame`. Inputs are same-match canonical events with stable event IDs and the `analyze_match` pass table with `event_id`, `entry`, and `success`. Possession output columns: `match_id`, `period`, `team`, `possession_id`, `start_time_s`, `end_time_s`, `start_event_id`, `end_event_id`, `event_ids`, `terminal_reason`, `duration_s`, `passes`, `completed_passes`, `final_third_entries`, `shots`, `goals`. Transition output columns: `match_id`, `period`, `team`, `transition_id`, `start_time_s`, `end_time_s`, `source_turnover_event_id`, `event_ids`, `final_third_entries`, `shots`, `goals`, `window_s`. Neither sequence table claims xT or shot quality.
 
-- [ ] Add `test_possession_counts_and_terminal_reason_hand_calculation`, `test_failed_pass_and_successful_defense_split_possessions`, `test_same_frame_order_is_stable`, `test_possessions_never_cross_period_or_match`, and `test_empty_events_return_empty_tables`.
-- [ ] Add `test_transition_includes_exact_window_boundary`, `test_transition_excludes_event_after_window`, `test_transition_starts_at_successful_defensive_action`, `test_no_transition_without_observed_opponent_event`, and `test_transition_never_crosses_period`.
-- [ ] Run focused tests to establish the expected failures.
-- [ ] Implement deterministic segmentation and transition windows without inferring carries or causal shot sequences.
+- [x] Add `test_possession_counts_and_terminal_reason_hand_calculation`, `test_failed_pass_and_successful_defense_split_possessions`, `test_same_frame_order_is_stable`, `test_possessions_never_cross_period_or_match`, and `test_empty_events_return_empty_tables`.
+- [x] Add `test_transition_includes_exact_window_boundary`, `test_transition_excludes_event_after_window`, `test_transition_starts_at_successful_defensive_action`, `test_no_transition_without_observed_opponent_event`, and `test_transition_never_crosses_period`.
+- [x] Run focused tests to establish the expected failures.
+- [x] Implement deterministic segmentation and transition windows without inferring carries or causal shot sequences.
 
 
-- [ ] Use the fixed transition rule: start at a successful defensive action or at the first opponent event after an unsuccessful pass; stop at possession end, 10 seconds, or period end, whichever is first. Emit no transition when no opponent event is observed within the window. Preserve source order for events sharing a frame.
-- [ ] Run `pytest tests/test_sequences.py -q` and commit `feat: model observed possessions and transitions`.
+- [x] Use the fixed transition rule: start at a successful defensive action or at the first opponent event after an unsuccessful pass; stop at possession end, 10 seconds, or period end, whichever is first. Emit no transition when no opponent event is observed within the window. Preserve source order for events sharing a frame.
+- [x] Run `pytest tests/test_sequences.py -q` and commit `feat: model observed possessions and transitions`.
 
 ### Task 3: Report Metrics, Evidence, and Tactical Hypotheses
 
