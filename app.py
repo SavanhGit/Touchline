@@ -8,8 +8,9 @@ import plotly.express as px
 import streamlit as st
 
 from soccer_tactics.analytics.report import analyze_catalogued_metrica
-from soccer_tactics.dashboard.charts import evidence_pitch, pass_map, snapshot, tracking_window
+from soccer_tactics.dashboard.charts import evidence_pitch, pass_map, shot_map, snapshot, tracking_window
 from soccer_tactics.agent.chat import answer_question
+from soccer_tactics.agent.tools import call_tool
 from soccer_tactics.dashboard.chat import build_idsse_context, build_metrica_context, render_chat_panel
 from soccer_tactics.loaders import load_metrica_bundle, load_idsse_bundle
 from soccer_tactics.loaders.catalog import list_match_catalogue
@@ -22,13 +23,13 @@ IDSSE_MANIFEST = ROOT / "docs" / "validation" / "idsse-v1.json"
 st.set_page_config(page_title="Touchline | Soccer Match Analysis", page_icon="⚽", layout="wide")
 
 
-@st.cache_resource(max_entries=2)
+@st.cache_resource(max_entries=3)
 def load_bundle(game, revision):
     # Shared source bundles are read-only. Analytics build their own derived tables.
     return load_metrica_bundle(DATA, game)
 
 
-@st.cache_data(max_entries=4, show_spinner="Building the evidence report…")
+@st.cache_data(max_entries=6, show_spinner="Building the evidence report…")
 def load_report(game, team, revision):
     return analyze_catalogued_metrica(
         game, team, load_catalogue(revision), lambda g: load_bundle(g, revision))
@@ -83,13 +84,13 @@ def main():
         source_files = [DATA / "data" / f"Sample_Game_{g}" / f"Sample_Game_{g}_Raw{suffix}.csv"
                         for g in (1, 2)
                         for suffix in ("EventsData", "TrackingData_Home_Team", "TrackingData_Away_Team")]
+        source_files += [DATA / "data" / "Sample_Game_3" / f"Sample_Game_3_{suffix}"
+                         for suffix in ("metadata.xml", "tracking.txt", "events.json")]
         catalogue_revision = tuple((str(p.resolve()), p.stat().st_mtime_ns, p.stat().st_size)
                                    for p in source_files + sorted(IDSSE_DATA.glob("*.xml")) + [IDSSE_MANIFEST]
                                    if p.is_file())
         entries = load_catalogue(catalogue_revision)
         ready_entries = [entry for entry in entries if entry.ready]
-        metrically_complete = all(any(e.provider == "Metrica" and e.match_id == f"metrica_{g}" and e.ready
-                                      for e in entries) for g in (1, 2))
         if not ready_entries:
             st.warning("No validated source matches are available. Restore Metrica sample data or install and validate IDSSE data.")
             st.code(str(DATA))
@@ -98,14 +99,6 @@ def main():
                     st.caption(entry.reason)
             st.code("git clone --depth 1 https://github.com/metrica-sports/sample-data data/raw/metrica")
             st.stop()
-        if not metrically_complete:
-            missing = [f for f in source_files if not f.is_file() or f.stat().st_size == 0]
-            if missing and not any(e.provider == "IDSSE" and e.ready for e in ready_entries):
-                st.warning("Source data is missing or empty. Both Metrica matches need events, home tracking and away tracking before analysis can start. Restore the Metrica sample data at the path below.")
-                st.code(str(DATA))
-                st.write("Missing or empty files:", ", ".join(f.name for f in missing))
-                st.code("git clone --depth 1 https://github.com/metrica-sports/sample-data data/raw/metrica")
-                st.stop()
         option_ids = [entry.match_id for entry in ready_entries]
         previous = st.session_state.get("_previous_match_id")
         if previous is not None and previous in option_ids and st.session_state.get("selected_match") != previous:
@@ -160,7 +153,7 @@ def main():
     try:
         bundle = load_bundle(game, revision)
         report = load_report(game, team, revision)
-    except (ValueError, FileNotFoundError) as exc:
+    except (ValueError, FileNotFoundError, ImportError) as exc:
         st.error(f"Match analysis unavailable: {exc}")
         st.stop()
     st.markdown('<div class="eyebrow">THE MATCH, EXPLAINED THROUGH EVIDENCE</div>', unsafe_allow_html=True)
@@ -168,7 +161,7 @@ def main():
     score_text = f"Home {report.score['home']} – {report.score['away']} Away" if report.score is not None else "Score unknown"
     st.markdown(f"**Sample game {game} · {score_text}**  /  {team.capitalize()} perspective · {report.outcome.upper()}")
     st.caption("Patterns that may have contributed, with adjustments to investigate. These findings do not establish causation.")
-    overview, risk, players_tab, evidence_tab = st.tabs(["Overview", "Risk & progression", "Players", "Evidence"])
+    overview, risk, players_tab, evidence_tab, v4_tab = st.tabs(["Overview", "Risk & progression", "Players", "Evidence", "Sequences & shots"])
     own = report.comparisons.set_index("team").loc[team]
     with overview:
         cols = st.columns(4)
@@ -267,6 +260,37 @@ def main():
             if control:
                 st.caption("Green indicates home control; orange indicates away control. Simplified time-to-intercept omits ball flight and acceleration; it is not pass-success probability.")
     chat_context = build_metrica_context(report, bundle.team_names)
+    with v4_tab:
+        sequence = call_tool(chat_context, "sequence_summary", {})
+        st.subheader("Possessions and transitions")
+        st.caption(f"{sequence['sample_counts']['possessions']} observed possessions · {sequence['sample_counts']['transitions']} qualifying transitions")
+        st.caption(sequence["limitations"][0])
+        for key, empty_message in (("possessions", "No observed possessions are available."),
+                                   ("transitions", "No qualifying transitions are available.")):
+            if sequence[key]:
+                st.dataframe(pd.DataFrame(sequence[key]), hide_index=True, width="stretch")
+            else:
+                st.info(empty_message)
+        defense = call_tool(chat_context, "defensive_summary", {})
+        st.subheader("Defensive actions")
+        st.caption(f"{defense['sample_counts']['defensive_actions']} recognized defensive actions")
+        st.caption(defense["limitations"][0])
+        if not defense["sample_counts"]["defensive_actions"]:
+            st.info("No recognized defensive actions are recorded; this does not mean no defending occurred.")
+        if defense["defensive_actions"]:
+            table = pd.DataFrame(defense["defensive_actions"])
+            table["actions_per_90"] = table.actions_per_90.map(display_value)
+            st.dataframe(table, hide_index=True, width="stretch")
+        shots = call_tool(chat_context, "shot_summary", {})
+        st.subheader("Shot locations and outcomes")
+        st.caption(f"{shots['sample_counts']['shot_summaries']} shots · raw outcomes by attacking channel")
+        st.caption(shots["limitations"][0])
+        if not shots["sample_counts"]["shot_summaries"]:
+            st.info("No shots are recorded for this team.")
+        else:
+            st.plotly_chart(shot_map(report.event_evidence, team), width="stretch")
+        if shots["shot_summaries"]:
+            st.dataframe(pd.DataFrame(shots["shot_summaries"]), hide_index=True, width="stretch")
     render_chat_panel(
         st, chat_context, (selected.provider, selected.match_id, team),
         answerer=answer_question,

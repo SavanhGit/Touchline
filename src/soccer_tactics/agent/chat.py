@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from typing import Any, Iterable, Mapping
 
@@ -115,7 +116,17 @@ def _report_facts(context: AnalysisContext) -> tuple[dict[str, Any], set[str]]:
         citation_id for finding in findings.get("findings", [])
         for citation_id in finding.get("evidence_ids", [])
     }
+    v4 = {name: call_tool(context, name, {}) for name in
+          ("sequence_summary", "defensive_summary", "shot_summary")}
+    for name, result in v4.items():
+        # Sequence tables can contain hundreds of rows; expose counts initially.
+        if name == "sequence_summary":
+            result.pop("possessions", None)
+            result.pop("transitions", None)
+        result["citation_ids"] = result["citation_ids"][:3]
+        player_ids.update(result["citation_ids"])
     return {
+        **v4,
         "match_summary": summary,
         "team_findings": findings,
         "player_metrics": players,
@@ -163,6 +174,9 @@ def answer_question(
     """
     if not isinstance(question, str) or not question.strip():
         raise ValueError("question cannot be empty")
+    if (re.search(r"\b(transition|turnover)s?\b", question, re.I)
+            and re.search(r"\b(cause|caused|causes|causing)\b", question, re.I)):
+        return ChatAnswer("unsupported", "Observed transitions cannot establish that a turnover or transition caused a later shot or goal.", [])
     client = client or OllamaChatClient()
     messages = [{"role": "system", "content": _system_prompt(context)}]
     report_facts, verified_ids = _report_facts(context)

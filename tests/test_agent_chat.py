@@ -56,6 +56,7 @@ def test_answer_question_runs_context_tool_then_validates_structured_citations()
     assert answer.citation_ids == ["m1:1:12:0"]
     assert [tool["function"]["name"] for tool in client.calls[0]["tools"]] == [
         "match_summary", "team_findings", "player_metrics", "evidence_lookup",
+        "sequence_summary", "defensive_summary", "shot_summary",
     ]
     assert client.calls[0]["format"] is None
     tool_messages = [message for message in client.calls[1]["messages"]
@@ -220,3 +221,39 @@ def test_malformed_tool_call_is_rejected_without_crashing_or_crossing_context():
     assert answer.status == "unsupported"
     assert '"error"' in client.calls[1]["messages"][-1]["content"]
 
+
+
+
+def test_chat_returns_cited_v4_report_facts():
+    from factories import make_bundle
+    from soccer_tactics.analytics.report import analyze_match
+    from soccer_tactics.dashboard.chat import build_metrica_context
+    report = analyze_match(make_bundle("v4"), "away", [make_bundle("training")])
+    report.findings.clear()
+    context = build_metrica_context(report)
+    cid = next(e.event_id for e in report.event_evidence if e.team == "away" and e.event == "shot")
+    client = SequenceClient([{"message": {"content": json.dumps({"status": "answered", "text": "Five shots recorded.", "citation_ids": [cid]})}}])
+    answer = answer_question(context, "How many shots?", client=client)
+    assert answer.status == "answered" and answer.citation_ids == [cid]
+    facts = next(m["content"] for m in client.calls[0]["messages"] if "Verified selected-report facts" in m.get("content", ""))
+    assert '"shot_summary"' in facts and '"shots": 3' in facts
+
+
+def test_v4_chat_citations_follow_selected_match_and_team():
+    from factories import make_bundle
+    from soccer_tactics.analytics.report import analyze_match
+    from soccer_tactics.dashboard.chat import build_metrica_context
+    for match, team in [("one", "home"), ("two", "away")]:
+        report = analyze_match(make_bundle(match), team, [make_bundle("training")])
+        report.findings.clear()
+        context = build_metrica_context(report)
+        invalid = {"message": {"content": json.dumps({"status": "answered", "text": "Foreign evidence", "citation_ids": ["foreign:shot"]})}}
+        assert answer_question(context, "Shots?", client=SequenceClient([invalid, invalid])).status == "withheld"
+        assert all(e.match_id == match and e.team == team for e in report.event_evidence if e.event_id in context.allowed_citation_ids)
+
+
+def test_chat_abstains_on_causal_transition_question():
+    client = SequenceClient([])
+    answer = answer_question(_context(), "Did the transition cause the later shot?", client=client)
+    assert answer.status == "unsupported" and answer.citation_ids == []
+    assert not client.calls

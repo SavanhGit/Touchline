@@ -19,7 +19,7 @@ IDSSE_LIMITATIONS = (
 
 
 def build_metrica_context(report, team_names=None) -> AnalysisContext:
-    """Limit chat to selected-match passes and cited report finding evidence."""
+    """Limit chat to selected-team report events and cited finding evidence."""
     passes = report.passes
     if {"event_id", "match_id", "team"}.issubset(passes.columns):
         selected = passes[
@@ -32,7 +32,9 @@ def build_metrica_context(report, team_names=None) -> AnalysisContext:
     finding_ids = [str(evidence.event_id) for finding in report.findings
                    for evidence in finding.evidence
                    if str(evidence.match_id) == str(report.match_id)]
-    citation_ids = tuple(dict.fromkeys([*pass_ids, *finding_ids]))
+    event_ids = [str(e.event_id) for e in report.event_evidence
+                 if str(e.match_id) == str(report.match_id) and e.team == report.team]
+    citation_ids = tuple(dict.fromkeys([*pass_ids, *finding_ids, *event_ids]))
     return AnalysisContext(
         source="Metrica", match_id=str(report.match_id), selected_team=report.team,
         report=report, team_names=team_names or {}, limitations=tuple(report.limitations),
@@ -80,6 +82,10 @@ def citation_description(context: AnalysisContext, citation_id: str) -> str | No
     if citation_id not in context.allowed_citation_ids:
         return None
     if context.is_metrica:
+        for evidence in context.report.event_evidence:
+            if str(evidence.event_id) == citation_id and str(evidence.match_id) == str(context.match_id):
+                return (f"P{evidence.period} · source {float(evidence.time_s) / 60:.2f} min · "
+                        f"{evidence.player_id} · {evidence.event} · frame {evidence.frame}")
         rows = context.report.passes
         if not {"event_id", "match_id", "team"}.issubset(rows.columns):
             return None

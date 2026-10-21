@@ -57,6 +57,8 @@ import sys, pickle
 from pathlib import Path
 sys.path.insert(0, {str(Path(__file__).resolve().parents[1])!r})
 import app as dashboard
+import importlib
+importlib.reload(dashboard)
 import streamlit as st
 dashboard.DATA = Path({str(root)!r})
 dashboard.IDSSE_DATA = Path({str(tmp_path / "idsse")!r})
@@ -82,7 +84,7 @@ dashboard.main()
     return AppTest.from_string(script, default_timeout=30)
 
 
-@pytest.mark.parametrize("sources", [-1, 0, 5, 7])
+@pytest.mark.parametrize("sources", [-1, 0])
 def test_missing_sources_stop_before_modeling(tmp_path, sources):
     app = synthetic_app(tmp_path, sources=sources).run()
     assert not app.exception
@@ -312,3 +314,47 @@ def test_dashboard_match_team_and_evidence_navigation():
     assert not app.exception
     app.selectbox(key="selected_match").select("metrica_2").run()
     assert not app.exception
+
+
+def test_dashboard_v4_sections_render_for_metrica(tmp_path):
+    app = synthetic_app(tmp_path).run()
+    assert not app.exception
+    headings = {item.value for item in app.subheader}
+    assert {"Possessions and transitions", "Defensive actions", "Shot locations and outcomes"} <= headings
+    assert any("10 seconds" in item.value for item in app.caption)
+    assert any("observed tracking minutes" in item.value for item in app.caption)
+    assert any("shot quality" in item.value for item in app.caption)
+    assert any("5 shots" in item.value for item in app.caption)
+
+
+def test_dashboard_v4_empty_summaries_are_explained(tmp_path):
+    app = synthetic_app(tmp_path, empty=True).run()
+    assert not app.exception
+    text = " ".join(item.value for item in app.info)
+    for expected in ("No observed possessions", "No qualifying transitions", "No recognized defensive actions", "No shots"):
+        assert expected in text
+
+
+
+@pytest.mark.parametrize("sources", [5, 7])
+def test_single_complete_catalogued_match_is_selectable(tmp_path, sources):
+    app = synthetic_app(tmp_path, sources=sources).run()
+    assert not app.exception
+    assert app.title[0].value == "What shaped the result?"
+    assert app.selectbox(key="selected_match").value == "metrica_1"
+    assert len(app.selectbox(key="selected_match").options) == 1
+
+
+def test_three_match_dashboard_cache_retains_training_sources(monkeypatch):
+    import importlib
+    import app as dashboard
+    importlib.reload(dashboard)
+    calls = []
+    def load(root, game):
+        calls.append(game)
+        return {"game": game}
+    monkeypatch.setattr(dashboard, "load_metrica_bundle", load)
+    for _ in range(2):
+        for game in (1, 2, 3):
+            assert dashboard.load_bundle(game, ("v4-cache-test",))["game"] == game
+    assert calls == [1, 2, 3]
