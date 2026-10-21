@@ -70,13 +70,15 @@ def estimate_calibration(
         image_to_pitch = np.linalg.inv(pitch_to_image)
     except np.linalg.LinAlgError:
         return _invalid("estimated homography is noninvertible", inlier_count)
+    if not np.isfinite(image_to_pitch).all() or abs(float(np.linalg.det(image_to_pitch))) < 1e-12:
+        return _invalid("estimated inverse homography is nonfinite or noninvertible", inlier_count)
     predicted_image = _apply_homography(pitch_xy[inliers], pitch_to_image)
     errors = np.linalg.norm(predicted_image - image_xy[inliers], axis=1)
     median_error_px = float(np.median(errors))
     if not np.isfinite(median_error_px) or median_error_px > max_reprojection_error_px:
         return _invalid("median reprojection error exceeds limit", inlier_count, median_error_px)
 
-    return CalibrationResult(True, image_to_pitch / image_to_pitch[2, 2], inlier_count, median_error_px, None)
+    return CalibrationResult(True, image_to_pitch, inlier_count, median_error_px, None)
 
 
 def _apply_homography(points_xy: np.ndarray, transform: np.ndarray) -> np.ndarray:
