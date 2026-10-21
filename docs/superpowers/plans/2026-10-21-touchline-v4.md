@@ -56,7 +56,7 @@
 - [x] Implement deterministic segmentation and transition windows without inferring carries or causal shot sequences.
 
 
-- [x] Use the fixed transition rule: start at a successful defensive action or at the first opponent event after an unsuccessful pass; stop at possession end, 10 seconds, or period end, whichever is first. Emit no transition when no opponent event is observed within the window. Preserve source order for events sharing a frame.
+- [x] Use the fixed transition rule: after an unsuccessful pass, start at the first opponent event observed within the 10-second window; after a successful defensive action, require a later event from that same team in the same observed possession within 10 seconds to confirm retained possession. Deduplicate both triggers by new possession, preferring the defensive action as the source when both identify the same start. Stop at possession end, 10 seconds, or period end, whichever comes first. Preserve source order for events sharing a frame.
 - [x] Run `pytest tests/test_sequences.py -q` and commit `feat: model observed possessions and transitions`.
 
 ### Task 3: Report Metrics, Evidence, and Tactical Hypotheses
@@ -65,15 +65,15 @@
 
 **Interfaces:** Preserve existing `analyze_match(match_bundle, team, training_matches) -> MatchReport` call shape and existing fields. Add `possessions`, `transitions`, `defensive_actions`, and `shot_summaries` report fields. Keep existing report fields positional-compatible by appending defaults. Each evidence item references a source match, period, frame, and timestamp.
 
-- [ ] Add `test_report_v4_summaries_match_hand_calculated_counts`, `test_defensive_actions_per_90_use_observed_tracking_exposure`, `test_shots_are_summarized_by_attacking_channel`, and `test_findings_stay_capped_at_three_with_stable_ties`.
-- [ ] Add `test_held_out_match_never_trains_its_xt_grid` and `test_all_other_catalogued_metrica_matches_train_report` for Games 1–3.
-- [ ] Add `test_unknown_score_and_empty_defense_are_explicit`, `test_low_shot_count_has_no_quality_claim`, and `test_insufficient_pattern_evidence_returns_fewer_findings`.
-- [ ] Integrate the sequence outputs, defensive-action summaries, and shot-location/outcome summaries; do not add a learned shot-quality model.
-- [ ] Add deterministic findings only when source-backed thresholds are met; every suggestion includes citations and a tradeoff, and no claim establishes causation.
+- [x] Add `test_report_v4_summaries_match_hand_calculated_counts`, `test_defensive_actions_per_90_use_observed_tracking_exposure`, `test_shots_are_summarized_by_attacking_channel`, and `test_findings_stay_capped_at_three_with_stable_ties`.
+- [x] Add `test_held_out_match_never_trains_its_xt_grid` and `test_all_other_catalogued_metrica_matches_train_report` for Games 1–3.
+- [x] Add `test_unknown_score_and_empty_defense_are_explicit`, `test_low_shot_count_has_no_quality_claim`, and `test_insufficient_pattern_evidence_returns_fewer_findings`.
+- [x] Integrate the sequence outputs, defensive-action summaries, and shot-location/outcome summaries; do not add a learned shot-quality model.
+- [x] Add deterministic findings only when source-backed thresholds are met; every suggestion includes citations and a tradeoff, and no claim establishes causation.
 
 
-- [ ] Use finding denominator >= 5 and support >= 3. Keep one per category, sort by supporting-event count descending with stable tie order `transition`, `defense`, `buildup`, `progression`, `danger`, and return at most three; this is a display safeguard, not significance. Keep all summary tables even when patterns do not qualify.
-- [ ] Run `pytest tests/test_report.py tests/test_impact.py tests/test_agent_tools.py -q` and commit `feat: add evidence-backed V4 report metrics`.
+- [x] Use finding denominator >= 5 and support >= 3. Keep one per category, sort by supporting-event count descending with stable tie order `transition`, `defense`, `buildup`, `progression`, `danger`, and return at most three; this is a display safeguard, not significance. Keep all summary tables even when patterns do not qualify.
+- [x] Run `pytest tests/test_report.py tests/test_impact.py tests/test_agent_tools.py -q` and commit `feat: add evidence-backed V4 report metrics`.
 
 ### Task 4: Dashboard and Local Chat Integration
 
