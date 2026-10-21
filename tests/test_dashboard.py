@@ -11,6 +11,7 @@ from streamlit.testing.v1 import AppTest
 from conftest import GAMES
 from factories import make_bundle
 from soccer_tactics.analytics.report import analyze_match
+from soccer_tactics.loaders.catalog import CatalogEntry
 
 
 @pytest.fixture(autouse=True)
@@ -57,6 +58,8 @@ sys.path.insert(0, {str(Path(__file__).resolve().parents[1])!r})
 import app as dashboard
 import streamlit as st
 dashboard.DATA = Path({str(root)!r})
+dashboard.IDSSE_DATA = Path({str(tmp_path / "idsse")!r})
+dashboard.IDSSE_MANIFEST = Path({str(tmp_path / "idsse-manifest.json")!r})
 if "loader_calls" not in st.session_state:
     st.session_state["loader_calls"] = 0
 bundles, reports = pickle.loads(Path({str(payload)!r}).read_bytes())
@@ -75,7 +78,7 @@ def test_missing_sources_stop_before_modeling(tmp_path, sources):
     app = synthetic_app(tmp_path, sources=sources).run()
     assert not app.exception
     assert app.session_state["loader_calls"] == 0
-    assert any("source" in item.value.lower() for item in app.warning)
+    assert any("source" in item.value.lower() for item in app.sidebar.warning)
     assert not app.title
 
 
@@ -151,17 +154,101 @@ def test_match_team_switch_does_not_reuse_evidence(tmp_path):
     assert len(app.selectbox(key="finding_1_home").options) == 3
     app.selectbox(key="finding_1_home").select(2).run()
     assert any("Evidence ID: 1:" in item.value for item in app.caption)
-    app.selectbox(key="selected_match").select(2).run()
+    app.selectbox(key="selected_match").select("metrica_2").run()
     assert not app.exception
     assert any("No qualifying evidence" in item.value for item in app.info)
     assert not any("Evidence ID:" in item.value for item in app.caption)
-    app.selectbox(key="selected_match").select(1).run()
+    app.selectbox(key="selected_match").select("metrica_1").run()
     app.selectbox(key="selected_team").select("away").run()
     assert not app.exception
     assert not any("Evidence ID:" in item.value for item in app.caption)
     app.selectbox(key="selected_team").select("home").run()
     assert not app.exception
     assert any("Evidence ID: 1:" in item.value for item in app.caption)
+
+
+def test_idsse_selection_renders_source_origins_and_limitations(tmp_path):
+    script = f'''
+import sys
+from pathlib import Path
+import pandas as pd
+sys.path.insert(0, {str(Path(__file__).resolve().parents[1])!r})
+import app as dashboard
+from soccer_tactics.loaders.catalog import CatalogEntry
+dashboard.DATA = Path({str(tmp_path / "metrica")!r})
+dashboard.IDSSE_DATA = Path({str(tmp_path / "idsse")!r})
+dashboard.IDSSE_MANIFEST = Path({str(tmp_path / "manifest.json")!r})
+entry = CatalogEntry("IDSSE", "idsse_DFL-MAT-A1", str(dashboard.IDSSE_DATA), "IDSSE · DFL-MAT-A1", {{"home":"Home Label", "away":"Away Label"}}, True)
+dashboard.load_catalogue = lambda revision: [entry]
+origins = pd.DataFrame([{{"period":1,"team":"Away Label","event":"pass","source_code":"Play_Pass","source_timestamp":"2026-01-01T00:00:00Z","gameclock_s":2.0,"source_x_m":50.0,"source_y_m":20.0}}])
+dashboard.load_idsse_origin_report = lambda *args: (origins, {{"home":1,"away":0}}, entry.team_names, {{"event_capabilities":{{"pass_endpoints":False}}}}, {{"event_origin_count":1}})
+dashboard.main()
+'''
+    app = AppTest.from_string(script, default_timeout=30).run()
+    assert not app.exception
+    assert app.title[0].value == "What the source records show"
+    assert any("IDSSE/DFL source events" in item.value for item in app.caption)
+    assert any("synchronization are unavailable" in item.value for item in app.warning)
+    assert len(app.dataframe) == 1
+    assert not any("Risk & progression" in item.label for item in app.tabs)
+    assert not any("Seconds relative" in item.value for item in app.slider)
+
+
+def test_provider_switch_resets_team_and_idsse_skips_analysis_and_tracking(tmp_path):
+    bundle = make_bundle("1")
+    report = analyze_match(bundle, "home", [make_bundle("2")])
+    payload = tmp_path / "fixtures.pkl"
+    payload.write_bytes(pickle.dumps((bundle, report)))
+    script = f'''
+import sys, pickle
+from pathlib import Path
+import pandas as pd
+sys.path.insert(0, {str(Path(__file__).resolve().parents[1])!r})
+import app as dashboard
+from soccer_tactics.loaders.catalog import CatalogEntry
+dashboard.DATA = Path({str(tmp_path / "metrica")!r})
+dashboard.IDSSE_DATA = Path({str(tmp_path / "idsse")!r})
+dashboard.IDSSE_MANIFEST = Path({str(tmp_path / "manifest.json")!r})
+entries = [
+    CatalogEntry("Metrica", "metrica_1", str(dashboard.DATA), "Metrica · Sample game 1", {{"home":"Home (anonymous)","away":"Away (anonymous)"}}, True),
+    CatalogEntry("IDSSE", "idsse_DFL-MAT-A1", str(dashboard.IDSSE_DATA), "IDSSE · DFL-MAT-A1", {{"home":"Home Label","away":"Away Label"}}, True),
+]
+dashboard.load_catalogue = lambda revision: entries
+bundle, report = pickle.loads(Path({str(payload)!r}).read_bytes())
+dashboard.load_bundle = lambda game, revision: bundle
+dashboard.load_report = lambda game, team, revision: report
+origins = pd.DataFrame([{{"period":1,"team":"Away Label","event":"pass","source_code":"Play_Pass","source_timestamp":"2026-01-01T00:00:00Z","gameclock_s":2.0,"source_x_m":50.0,"source_y_m":20.0}}])
+dashboard.load_idsse_origin_report = lambda *args: (origins, {{"home":1,"away":0}}, entries[1].team_names, {{}}, {{}})
+dashboard.analyze_match = lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("IDSSE called analyze_match"))
+def forbidden_during_idsse(name, original):
+    def check(*args, **kwargs):
+        if str(dashboard.st.session_state.get("selected_match", "")).startswith("idsse_"):
+            raise AssertionError("IDSSE invoked " + name)
+        return original(*args, **kwargs)
+    return check
+dashboard.tracking_window = forbidden_during_idsse("tracking_window", dashboard.tracking_window)
+dashboard.snapshot = forbidden_during_idsse("snapshot", dashboard.snapshot)
+dashboard.evidence_pitch = forbidden_during_idsse("evidence_pitch", dashboard.evidence_pitch)
+dashboard.main()
+'''
+    app = AppTest.from_string(script, default_timeout=45).run()
+    assert not app.exception
+    app.selectbox(key="selected_team").select("home").run()
+    assert not app.exception and app.selectbox(key="selected_team").value == "home"
+    app.selectbox(key="selected_match").select("idsse_DFL-MAT-A1").run()
+    assert not app.exception
+    assert app.selectbox(key="selected_team").value == "away"
+    assert app.title[0].value == "What the source records show"
+    assert not any("Evidence ID:" in item.value for item in app.caption)
+    assert not app.slider and not app.checkbox
+    app.selectbox(key="selected_team").select("home").run()
+    app.selectbox(key="selected_match").select("metrica_1").run()
+    assert not app.exception
+    assert app.selectbox(key="selected_team").value == "away"
+    assert app.title[0].value == "What shaped the result?"
+    app.selectbox(key="selected_team").select("home").run()
+    assert not app.exception
+    assert any("Evidence ID: 1:1:0:0" in item.value for item in app.caption)
 
 
 @pytest.mark.skipif(len(GAMES) < 2, reason="requires both real Metrica games")
@@ -177,5 +264,5 @@ def test_dashboard_match_team_and_evidence_navigation():
     assert not app.exception
     app.checkbox(key="show_control").check().run()
     assert not app.exception
-    app.selectbox(key="selected_match").select(2).run()
+    app.selectbox(key="selected_match").select("metrica_2").run()
     assert not app.exception
