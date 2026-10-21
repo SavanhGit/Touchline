@@ -35,9 +35,23 @@ Owner-machine acceptance used the real Metrica and IDSSE files and installed Qwe
 
 The V4 release gate is complete. Source and descriptive audits remain separate from tactical suggestion effectiveness; validation cannot establish that a suggested adjustment changes a result. Local Ollama response time still depends on the selected model and hardware.
 
-## V5 — Recorded video
+## V5 — Video-derived player tracking
 
-Integrate a video pipeline such as Roboflow Sports through the existing canonical adapter. Evaluate identity switches, missing players, pitch calibration, event extraction, and location error against ground truth. Mark off-camera players as missing; never manufacture a complete pitch.
+Build a local, post-match workflow that turns recorded soccer video into tracking data Touchline can analyze. Player tracking is the first milestone; ball tracking and event extraction follow only after that output passes its validation gate. Inference must run locally, with no required paid API.
+
+### First milestone: player tracking
+
+- Start with a local video file and a pipeline such as Roboflow Sports behind the existing CV adapter. Convert detections into the canonical tracking format so downstream Touchline loaders and analytics can consume them.
+- Calibrate the camera view to pitch coordinates and retain frame/time, team, player track ID, and position. Let the user map tracks to home/away and roster names manually; automatic jersey recognition is deferred.
+- Preserve gaps when players are occluded or off-camera. Do not invent positions or imply complete visibility.
+- Evaluate against annotated footage. Report missed detections, identity switches, pitch-calibration quality, and player-location error, and inspect representative tracking overlays before calling the output usable.
+
+### Follow-on milestones
+
+- After local-file processing works, add best-effort URL import for sources the app can access. Feed retrieved video through the same processing path and show an actionable error with local-file fallback when retrieval fails.
+- Add ball tracking and then event extraction as later V5 milestones. Keep live ingestion and incremental analysis in V6.
+
+Keep source videos and annotation files outside Git. The first player-tracking milestone is complete when the local-file path produces canonical tracking, names and teams can be assigned, and the annotated-footage evaluation and visual review are recorded. URL import, ball tracking, and event extraction remain follow-on V5 milestones; they do not block this first gate.
 
 ## V6 — Live analysis
 
