@@ -27,11 +27,11 @@ See the [full roadmap](docs/ROADMAP.md) for scope and validation details.
 
 ## Windows setup
 
-Install Python 3.12 and Git. In PowerShell, from this repository:
+Install 64-bit Python 3.15 and Git. In PowerShell, from this repository:
 
 ```powershell
-python --version  # use Python 3.12
-python -m venv .venv
+py -3.15 --version
+py -3.15 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e ".[dev,dashboard,demo]" -c requirements-demo.txt
 .\.venv\Scripts\python.exe -m pip check
 git clone --depth 1 https://github.com/metrica-sports/sample-data.git data/raw/metrica

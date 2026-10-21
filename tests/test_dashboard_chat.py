@@ -85,18 +85,67 @@ class _ContextManager:
 
 
 class _FakeStreamlit:
-    def __init__(self):
+    def __init__(self, question="What happened?"):
         self.session_state = {}
         self.captions = []
+        self.forms = []
+        self.form_submit_buttons = []
+        self.question = question
 
     def container(self, **kwargs): return _ContextManager()
+    def form(self, key, **kwargs):
+        self.forms.append((key, kwargs))
+        return _ContextManager()
+    def form_submit_button(self, label, **kwargs):
+        self.form_submit_buttons.append((label, kwargs))
+        return True
     def subheader(self, value): pass
     def caption(self, value): self.captions.append(value)
-    def text_input(self, label, key): return "What happened?"
+    def text_input(self, label, key): return self.question
     def button(self, *args, **kwargs): return True
     def markdown(self, value): pass
     def write(self, value): pass
     def error(self, value): pass
+
+
+def test_chat_form_submits_question_on_enter_or_button():
+    report = analyze_match(make_bundle("1"), "home", [make_bundle("training")])
+    context = build_metrica_context(report)
+    st = _FakeStreamlit()
+    submitted = []
+
+    render_chat_panel(
+        st, context, ("Metrica", "1", "home"),
+        answerer=lambda _context, question, history: (
+            submitted.append((question, history))
+            or ChatAnswer("unsupported", "Not available.", [])
+        ),
+    )
+
+    assert st.forms == [("touchline_chat_form", {"enter_to_submit": True, "border": False})]
+    assert st.form_submit_buttons == [
+        ("Ask Touchline", {"key": "touchline_chat_submit", "disabled": False})
+    ]
+    assert submitted == [("What happened?", [])]
+
+
+def test_chat_submit_stays_enabled_but_ignores_blank_questions():
+    report = analyze_match(make_bundle("1"), "home", [make_bundle("training")])
+    context = build_metrica_context(report)
+    st = _FakeStreamlit(question="")
+    submitted = []
+
+    render_chat_panel(
+        st, context, ("Metrica", "1", "home"),
+        answerer=lambda *_: submitted.append(True)
+        or ChatAnswer("unsupported", "Not available.", []),
+    )
+
+    assert st.form_submit_buttons == [
+        ("Ask Touchline", {"key": "touchline_chat_submit", "disabled": False})
+    ]
+    assert not submitted
+    assert st.session_state["_touchline_chat_history"] == []
 
 
 def test_dashboard_withholds_answer_without_resolvable_citation():

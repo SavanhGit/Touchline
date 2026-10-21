@@ -123,8 +123,16 @@ def render_chat_panel(st, context: AnalysisContext, selection: tuple[str, str, s
         if context.is_idsse:
             st.caption("IDSSE answers are limited to factual source event origins.")
             st.caption("Unavailable: tracking synchronization, attack direction, pass destinations, progression, xT, and causation.")
-        question = st.text_input("Question about this match", key="touchline_chat_question")
-        if st.button("Ask Touchline", key="touchline_chat_submit", disabled=not bool(question.strip())):
+        with st.form("touchline_chat_form", enter_to_submit=True, border=False):
+            question = st.text_input("Question about this match", key="touchline_chat_question")
+            submitted = st.form_submit_button(
+                "Ask Touchline", key="touchline_chat_submit",
+                # Form widgets only sync their values on submission, so using
+                # ``question`` to disable this button leaves it disabled while
+                # the user types their first message.
+                disabled=False,
+            )
+        if submitted and question.strip():
             prior_history = list(history)
             history.append({"role": "user", "content": question.strip()})
             try:

@@ -43,6 +43,7 @@ def test_chat_posts_messages_tools_and_json_format_to_local_api():
         "tools": tools,
         "format": "json",
         "stream": False,
+        "think": False,
     }
     assert timeout > 0
     assert response == result
@@ -58,6 +59,14 @@ def test_unavailable_server_error_is_actionable():
         raise URLError(ConnectionRefusedError())
 
     with pytest.raises(RuntimeError, match="Ollama.*localhost:11434.*ollama serve"):
+        OllamaChatClient(transport=transport).chat([])
+
+
+def test_slow_model_error_explains_request_timeout():
+    def transport(request, timeout):
+        raise TimeoutError()
+
+    with pytest.raises(RuntimeError, match="Ollama.*timed out.*120"):
         OllamaChatClient(transport=transport).chat([])
 
 

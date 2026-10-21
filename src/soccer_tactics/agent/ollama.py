@@ -34,7 +34,14 @@ class OllamaChatClient:
 
     def chat(self, messages, tools=None, *, format=None) -> dict:
         """Send one non-streaming chat request and return Ollama's response."""
-        payload = {"model": self.model, "messages": messages, "stream": False}
+        payload = {
+            "model": self.model,
+            "messages": messages,
+            "stream": False,
+            # Qwen3 defaults to thinking mode, which is unnecessary for this
+            # evidence lookup flow and can push ordinary questions past timeout.
+            "think": False,
+        }
         if tools is not None:
             payload["tools"] = tools
         if format is not None:
@@ -56,7 +63,13 @@ class OllamaChatClient:
                     f"Ollama model '{self.model}' was not found. Install it locally with `ollama pull {self.model}`."
                 ) from exc
             raise RuntimeError(f"Ollama chat request failed (HTTP {exc.code}): {error_body}") from exc
-        except (URLError, ConnectionError, TimeoutError, OSError) as exc:
+        except TimeoutError as exc:
+            raise RuntimeError(
+                f"Ollama timed out after {self.timeout:g} seconds while generating with "
+                f"'{self.model}'. The server is reachable, but the model did not finish; "
+                "try a smaller local model such as qwen3:4b."
+            ) from exc
+        except (URLError, ConnectionError, OSError) as exc:
             raise RuntimeError(
                 "Ollama is unavailable at localhost:11434. Start the local Ollama server (run `ollama serve`) and try again."
             ) from exc
