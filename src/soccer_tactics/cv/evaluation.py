@@ -73,7 +73,9 @@ def _boxes(data: pd.DataFrame, label: str) -> pd.DataFrame:
 
 def _project(points: np.ndarray, matrix: np.ndarray) -> np.ndarray:
     projected = np.column_stack((points, np.ones(len(points)))) @ matrix.T
-    if np.any(np.isclose(projected[:, 2], 0)):
+    # Homogeneous coordinates are equivalent under any nonzero scalar multiple.
+    scale = np.max(np.abs(projected), axis=1)
+    if np.any(np.abs(projected[:, 2]) <= np.finfo(float).eps * scale):
         raise ValueError('homography maps a reference or footpoint to infinity')
     result = projected[:, :2] / projected[:, 2:3]
     if not np.isfinite(result).all():

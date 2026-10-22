@@ -65,6 +65,33 @@ def test_actual_pipeline_locations_do_not_require_model_homography_or_boxes():
     assert np.isnan(result['calibration_median_error_m'])
 
 
+@pytest.mark.parametrize('scale', [1e-9, -1e-9, 1e9])
+def test_equivalent_scaled_homographies_preserve_evaluation_errors(scale):
+    predicted, annotations, references = sample()
+    expected = evaluate_calibration(predicted, annotations, references)
+    homography_columns = [f'h{i}{j}' for i in range(3) for j in range(3)]
+    predicted[homography_columns] *= scale
+
+    actual = evaluate_calibration(predicted, annotations, references)
+
+    assert actual == pytest.approx(expected)
+    assert actual['calibration_median_error_m'] == pytest.approx(2)
+    assert actual['player_location_median_error_m'] == pytest.approx(5)
+
+
+@pytest.mark.parametrize('scale', [1, 1e-9, -1e-9, 1e9])
+def test_scaled_homographies_still_reject_landmarks_at_infinity(scale):
+    predicted, annotations, references = sample()
+    # At frame 0, image x=20 has homogeneous w=.05*x-1=0.
+    predicted['h20'] = .05
+    predicted['h22'] = -1
+    homography_columns = [f'h{i}{j}' for i in range(3) for j in range(3)]
+    predicted[homography_columns] *= scale
+
+    with pytest.raises(ValueError, match='infinity'):
+        evaluate_calibration(predicted, annotations, references)
+
+
 def test_only_exact_frame_and_annotation_id_matches_contribute_without_fill():
     predicted, annotations, references = sample()
     predicted.loc[1, 'track_id'] = 'different'
