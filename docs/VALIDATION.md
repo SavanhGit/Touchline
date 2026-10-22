@@ -1,5 +1,15 @@
 # Validation notes
 
+## V5 local player tracking (2026-10-21)
+
+**Real-footage acceptance gate: pending.** The [V5 design](superpowers/specs/2026-10-21-v5-local-player-tracking-design.md) defines a short continuous local clip, manual team/name mapping, canonical export, independent SoccerNet/manual-pitch evaluation and representative visual review. The local workspace and evaluator are implemented; no measured real-video tracking/calibration scores or completed visual acceptance are recorded. See [V5 reproduction commands, CSV contracts, limitations and evidence checklist](validation/v5/README.md) and [optional Windows setup and model attribution](../README.md#optional-local-video-player-tracking-v5).
+
+Automated coverage uses synthetic frames and fake models for detection/calibration failures, source timing, orientation, manual mapping/exclusion, persistence, Streamlit state and evaluator boundaries. It does not establish model accuracy or browser overlay decoding. Real-model inference, annotated-footage metrics, browser playback and native Python 3.15 Windows setup/inference still need owner-machine evidence. Python 3.15 dependency compatibility has only a cross-target resolution check using a pure Python PyYAML workaround and the official CPU PyTorch index; it is not a native execution result.
+
+Source videos/annotations, checkpoints and generated tracking/overlays stay outside Git in ignored `data/raw/`, `data/models/`, and `data/processed/` (or external local storage). Exact terms for the two upstream Google Drive checkpoint binaries are not independently verified; the setup notes distinguish upstream AGPL-3.0 model attribution, MIT analytics/library code and CC BY 4.0 dataset labeling. No weights are redistributed.
+
+URL import, ball tracking, event extraction, and live analysis are not implemented. Video-only runs create no events, score, tactical match report or assistant evidence. Existing Metrica/IDSSE validation below belongs to its named release and does not validate video-derived data.
+
 ## Checkpoint baseline (2026-10-19)
 
 Task 0 ran in the existing primary checkout on `codex/tactical-analyst-test`, starting at `c70357af3c5c7d97b064cedd198133f34cb8c7e9`. The branch already contained uncommitted V1 implementation; no isolated worktree was created for this task. Existing unrelated worktrees are not part of this validation.

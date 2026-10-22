@@ -12,6 +12,56 @@ from soccer_tactics.schema import COLUMNS, EVENT_COLUMNS, FPS
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_v5_readme_documents_explicit_local_setup_and_exports():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    milestone = next(line for line in readme.splitlines() if "**V5" in line)
+    assert "local video first" in milestone
+    assert 'python -m pip install -e ".[dev,dashboard,cv]"' in readme
+    assert "scripts/download_video_models.py" in readme
+    assert "data/models/video" in readme
+    assert "data/processed/video_runs/<run_id>/" in readme
+    for filename in ("tracking.parquet", "frame_diagnostics.parquet", "metadata.json", "overlay.mp4"):
+        assert filename in readme
+    assert "PYYAML_FORCE_LIBYAML" in readme
+    assert "native Python 3.15" in readme
+    assert "not independently verified" in readme
+
+
+@pytest.mark.parametrize("relative", [
+    "README.md", "docs/ROADMAP.md", "docs/VALIDATION.md", "docs/validation/v5/README.md",
+])
+def test_v5_docs_link_design_and_evidence_without_claiming_follow_ons(relative):
+    path = ROOT / relative
+    content = path.read_text(encoding="utf-8")
+    assert "2026-10-21-v5-local-player-tracking-design.md" in content
+    if relative != "docs/validation/v5/README.md":
+        assert "validation/v5/README.md" in content
+    assert "URL import, ball tracking, event extraction, and live analysis are not implemented" in content
+    assert "acceptance gate" in content
+    assert "pending" in content.lower()
+    # Verify the local V5 documentation links resolve, independent of their label.
+    import re
+    for target in re.findall(r"\]\(([^)]+)\)", content):
+        if "v5" in target.lower() and "://" not in target:
+            assert (path.parent / target.split("#", 1)[0]).is_file(), target
+
+
+def test_v5_evaluation_notes_describe_real_cli_inputs_and_unavailable_metrics():
+    notes = (ROOT / "docs/validation/v5/README.md").read_text(encoding="utf-8")
+    assert "scripts/evaluate_video_tracking.py" in notes
+    for option in ("predictions", "annotations", "pitch-references", "trackeval", "output", "clip-id", "split", "boxes", "calibrations"):
+        assert f"--{option}" in notes
+    for shape in ("frame,track_id,x,y", "frame,track_id,x1,y1,x2,y2",
+                  "frame,image_x,image_y,pitch_x,pitch_y", "frame,h00,h01,h02,h10,h11,h12,h20,h21,h22"):
+        assert shape in notes
+    assert "one-based" in notes and "zero-based" in notes
+    assert "before attack-direction rotation" in notes
+    assert "do not retain image boxes or per-frame transforms" in notes
+    assert "annotation-derived" in notes
+    for metric in ("HOTA", "DetA", "AssA", "IDF1", "identity switches", "missed detections"):
+        assert metric in notes
+
+
 def test_roadmap_records_origin_only_idsse_scope_and_completed_release():
     roadmap = (ROOT / "docs/ROADMAP.md").read_text(encoding="utf-8")
     assert "origin-only IDSSE" in roadmap

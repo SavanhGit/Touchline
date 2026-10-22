@@ -26,6 +26,8 @@ The [featured analysis](docs/demo/featured-analysis.md) examines game 1's anonym
 
 See the [full roadmap](docs/ROADMAP.md) for scope and validation details.
 
+V5's local player-tracking workspace is implemented, with its real-footage **acceptance gate pending**. See the [V5 design](docs/superpowers/specs/2026-10-21-v5-local-player-tracking-design.md) and [evaluation instructions and evidence status](docs/validation/v5/README.md). URL import, ball tracking, event extraction, and live analysis are not implemented.
+
 ## Windows setup
 
 Install 64-bit Python 3.15 and Git. In PowerShell, from this repository:
@@ -58,6 +60,54 @@ data/raw/metrica/data/Sample_Game_3/
 ```
 
 No loader downloads data. The catalogue exposes Game 3 only when its local source set and optional dependency are ready. Raw data stays under ignored `data/raw/`. The Sequences & shots tab presents observed possessions, 10-second transition windows, recognized defensive outcomes per 90 observed team-minutes, and channel shots/goals. Counts do not estimate shot quality or tactical effects.
+
+### Optional local video player tracking (V5)
+
+Use a short, continuous local MP4 (the evaluation target is about 30 seconds) with one home attack direction. In a compatible Python environment, install the optional CV and dashboard dependencies explicitly:
+
+```powershell
+python -m pip install -e ".[dev,dashboard,cv]"
+python -m pip check
+```
+
+#### Windows Python 3.15 CV setup
+
+The current Windows workaround builds PyYAML 6.0.3 without LibYAML and uses the official CPU PyTorch wheels. [PyYAML's setup](https://github.com/yaml/pyyaml/blob/6.0.3/setup.py) supports `PYYAML_FORCE_LIBYAML=0`; this builds a pure Python wheel without MSVC. The project CV extra resolved successfully for Windows cp315 using that wheel and the CPU index. This was a cross-target dry run on bundled Python 3.12.14; **native Python 3.15 installation and inference remain unverified**. The recipe below is the owner-machine setup to verify, not a completed native acceptance result. It does not change the project's Python requirement.
+
+```powershell
+py -3.15 -m venv .venv-cv
+$cvPython = '.\.venv-cv\Scripts\python.exe'
+$env:PYYAML_FORCE_LIBYAML = '0'
+& $cvPython -m pip wheel --no-cache-dir --no-deps --no-binary=PyYAML --wheel-dir data/models/cv-wheels 'PyYAML==6.0.3'
+Remove-Item Env:PYYAML_FORCE_LIBYAML
+& $cvPython -m pip install --only-binary=:all: --find-links data/models/cv-wheels 'PyYAML==6.0.3'
+& $cvPython -m pip install --only-binary=:all: --index-url https://download.pytorch.org/whl/cpu 'torch==2.14.1+cpu' 'torchvision==0.29.1+cpu'
+& $cvPython -m pip install --dry-run --only-binary=:all: -e '.[dev,dashboard,cv]'
+& $cvPython -m pip install --only-binary=:all: -e '.[dev,dashboard,cv]'
+& $cvPython -m pip check
+```
+
+Keep this extra environment outside Git (for example, add `.venv-cv/` to the local Git exclude file located by `git rev-parse --git-path info/exclude`). The wheel cache is under ignored `data/models/`.
+
+#### Model setup and local workflow
+
+Roboflow's [soccer example](https://github.com/roboflow/sports/blob/main/examples/soccer/README.md) identifies its YOLOv8 player/pitch component as AGPL-3.0 and its Supervision-based analytics code as MIT. [Roboflow Sports](https://github.com/roboflow/sports/blob/main/LICENSE) and [Supervision](https://github.com/roboflow/supervision/blob/main/LICENSE.md) publish MIT code licenses; [Ultralytics publishes AGPL-3.0 and Enterprise licensing options](https://www.ultralytics.com/license). These are distinct from the exact downloaded checkpoint terms.
+
+The official [setup script](https://github.com/roboflow/sports/blob/main/examples/soccer/setup.sh) obtains `football-player-detection.pt` and `football-pitch-detection.pt` from Google Drive. The exact terms for those two binaries are not clearly published there and are **not independently verified** by this project. The [Roboflow Universe player dataset page](https://universe.roboflow.com/roboflow-jvuqo/football-players-detection-3zvbc) lists CC BY 4.0; that does not establish the exact checkpoint terms. Review upstream terms for your use before obtaining weights. This repository does not redistribute weights or claim that MIT/CC BY 4.0 covers them.
+
+After reviewing those terms, explicitly obtain the two checkpoints, then launch using the same environment:
+
+```powershell
+# Compatible environment; use & $cvPython instead of python for .venv-cv.
+python scripts/download_video_models.py --output-dir data/models/video
+python -m streamlit run app.py
+```
+
+Neither startup nor processing downloads models. In the sidebar choose **Video tracking**, choose a local MP4, enter a clip label and select the whole-clip home attack direction, then **Process video**. Review the overlay, diagnostics and pitch preview. Map each track to `home` or `away`, or explicitly exclude it; optional roster names stay in metadata. Include at least one player to **Save run** and **Download run**. Clip-local IDs are not verified player identities, and shared names do not merge track series.
+
+Saved output is `data/processed/video_runs/<run_id>/`: `tracking.parquet`, `frame_diagnostics.parquet`, `metadata.json`, and `overlay.mp4`; the ZIP contains those same four files. Canonical tracking columns are `match_id,period,frame,time_s,team,player_id,x,y`, with zero-based source frames, source-FPS seconds, period 1 and centered pitch metres rotated so home attacks +x. Metadata retains the source hash, clip properties, orientation, assignments and available model/package provenance, without the source path. The uploaded original and processing scratch files are temporary, not copied into the saved run.
+
+Keep raw videos and annotations under ignored `data/raw/` or outside the repository; weights stay under ignored `data/models/` and generated runs under ignored `data/processed/`. Do not add those assets to Git. Overlays also contain source footage and stay local. Failed calibration, occlusions, off-camera players and rejected projections leave gaps without interpolation. The 105 × 68 m planar pitch and Roboflow geometry normalization need real-footage validation. There is no video-derived event table, score, tactical match report or assistant evidence. Full-match processing, cuts and automatic team/name recognition are deferred. See the [local evaluator command, required CSVs and pending review](docs/validation/v5/README.md).
 
 ### Optional local match assistant
 
@@ -123,7 +173,7 @@ report = analyze_match(match, "away", [training])
 tracking, events = load_metrica_game("data/raw/metrica", game=1)  # compatible tuple API
 ```
 
-Lower-level APIs remain available: `analytics.features.add_kinematics`, `analytics.xt.fit_xt` / `add_xt`, `analytics.pitch_control.pitch_control` / `zone_threat`, and `analytics.impact.pass_values` / `player_impact`. Fit xT on other matches when scoring player impact. The optional match assistant uses context-bound tools and local Ollama inference; action-aware metrics, constant-velocity forecasts, a CV adapter, and video inference remain development work in the [roadmap](docs/ROADMAP.md).
+Lower-level APIs remain available: `analytics.features.add_kinematics`, `analytics.xt.fit_xt` / `add_xt`, `analytics.pitch_control.pitch_control` / `zone_threat`, and `analytics.impact.pass_values` / `player_impact`. Fit xT on other matches when scoring player impact. The optional match assistant uses context-bound tools and local Ollama inference. Local video tracking has a separate review/export workspace; video-derived events and event-dependent analysis remain future work in the [roadmap](docs/ROADMAP.md).
 
 ## Interpretation and attribution
 

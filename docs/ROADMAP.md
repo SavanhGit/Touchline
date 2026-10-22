@@ -37,21 +37,22 @@ The V4 release gate is complete. Source and descriptive audits remain separate f
 
 ## V5 — Video-derived player tracking
 
-Build a local, post-match workflow that turns recorded soccer video into tracking data Touchline can analyze. Player tracking is the first milestone; ball tracking and event extraction follow only after that output passes its validation gate. Inference must run locally, with no required paid API.
+**In progress: local-file player tracking first; real-footage acceptance gate pending.** The local review/export workspace and evaluator are implemented. Inference runs locally with no required paid API. See the [V5 design](superpowers/specs/2026-10-21-v5-local-player-tracking-design.md), [optional setup and model terms](../README.md#optional-local-video-player-tracking-v5), and [evaluation recipe and evidence status](validation/v5/README.md).
 
 ### First milestone: player tracking
 
-- Start with a local video file and a pipeline such as Roboflow Sports behind the existing CV adapter. Convert detections into the canonical tracking format so downstream Touchline loaders and analytics can consume them.
-- Calibrate the camera view to pitch coordinates and retain frame/time, team, player track ID, and position. Let the user map tracks to home/away and roster names manually; automatic jersey recognition is deferred.
-- Preserve gaps when players are occluded or off-camera. Do not invent positions or imply complete visibility.
-- Evaluate against annotated footage. Report missed detections, identity switches, pitch-calibration quality, and player-location error, and inspect representative tracking overlays before calling the output usable.
+- The **Video tracking** workspace accepts a short, continuous local MP4 with one home attack direction. Explicit optional CV installation and local player/pitch weights are required; no startup or inference download occurs.
+- Player detection, clip-local ByteTrack IDs and independent frame calibration produce centered 105 × 68 m pitch locations. Manual home/away mapping and optional roster names accompany canonical tracking export; automatic jersey/name recognition is deferred.
+- Failed calibration, rejected detections and off-camera players leave gaps without interpolation. Saved runs contain tracking, diagnostics, metadata and overlay under ignored `data/processed/video_runs/<run_id>/`; raw videos/annotations and weights remain outside Git under ignored `data/raw/` and `data/models/`, or external local storage.
+- The evaluator accepts local SoccerNet/MOT annotations and independent manual pitch points. HOTA/DetA/AssA, misses, identity switches and annotation-derived location/calibration errors still need a real run. Saved pipeline runs do not retain the image boxes or per-frame transforms needed for all metrics; the evaluation notes specify those separate inputs.
+- Annotated-footage evaluation, representative visual review, real browser overlay playback and native Windows Python 3.15 inference remain pending. Automated fake-model tests and cross-target dependency resolution do not satisfy those gates. Exact Google Drive checkpoint terms remain uncertain as documented in the setup notes; upstream code licensing is not checkpoint-license verification.
 
 ### Follow-on milestones
 
 - After local-file processing works, add best-effort URL import for sources the app can access. Feed retrieved video through the same processing path and show an actionable error with local-file fallback when retrieval fails.
 - Add ball tracking and then event extraction as later V5 milestones. Keep live ingestion and incremental analysis in V6.
 
-Keep source videos and annotation files outside Git. The first player-tracking milestone is complete when the local-file path produces canonical tracking, names and teams can be assigned, and the annotated-footage evaluation and visual review are recorded. URL import, ball tracking, and event extraction remain follow-on V5 milestones; they do not block this first gate.
+URL import, ball tracking, event extraction, and live analysis are not implemented. The first player-tracking milestone is complete only after the local-file canonical export, manual mapping, annotated-footage evaluation and visual review are recorded. No accuracy baseline has been measured yet. Video-only runs have no event table and cannot supply score/tactical match reports or assistant evidence. Follow-on V5 milestones do not block this first gate; live analysis stays in V6.
 
 ## V6 — Live analysis
 
